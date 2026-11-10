@@ -1,0 +1,72 @@
+{
+ "file": "__HOME__/.claude/projects/-fixture-Projects-demo/sess-asked-0002.jsonl",
+ "tail": {
+  "ask": "Should I push the branch?",
+  "askTs": 1794304920,
+  "branch": "main",
+  "contextTokens": 4312,
+  "cwd": "__HOME__/Projects/demo",
+  "effort": "high",
+  "events": [
+   {
+    "body": "Make the release build work.",
+    "id": "sess-asked-0002-u001:0",
+    "k": "you",
+    "t": 1794304820,
+    "title": "Make the release build work."
+   },
+   {
+    "body": "Building the release now.",
+    "id": "sess-asked-0002-u002:0",
+    "k": "say",
+    "t": 1794304840,
+    "title": "Building the release now."
+   },
+   {
+    "body": "swift build -c release",
+    "id": "toolu_ab1",
+    "k": "tool",
+    "out": "Build complete!",
+    "t": 1794304860,
+    "title": "Run swift build -c release",
+    "tool": "Bash",
+    "verb": "run"
+   },
+   {
+    "body": "The release build works now.",
+    "id": "sess-asked-0002-u005:0",
+    "k": "say",
+    "t": 1794304900,
+    "title": "The release build works now."
+   },
+   {
+    "body": "Fixed the release build. It now compiles in 40 seconds.\n\nAsked: Should I push the branch?",
+    "id": "sess-asked-0002-u006:0",
+    "k": "recap",
+    "t": 1794304920,
+    "title": "Fixed the release build. It now compiles in 40 seconds."
+   }
+  ],
+  "lastText": "The release build works now.",
+  "lastTextTs": 1794304900,
+  "lastTs": 1794304920,
+  "mode": null,
+  "model": "claude-opus-5-5",
+  "mtime": 1794311940,
+  "pending": [],
+  "plan": [],
+  "prompt": "Make the release build work.",
+  "promptTs": 1794304820,
+  "prs": [
+   {
+    "number": 7,
+    "repo": "example/demo",
+    "url": "https://github.com/example/demo/pull/7"
+   }
+  ],
+  "recap": "Fixed the release build. It now compiles in 40 seconds.",
+  "size": 3839,
+  "title": null,
+  "turnEnded": true
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "problems": [
+  {
+   "at": 1794305000,
+   "label": "Backup",
+   "status": "failed",
+   "why": "disk full"
+  }
+ ],
+ "routines": [
+  {
+   "count": 2,
+   "failed": 0,
+   "last": 1794311400,
+   "name": "Nightly digest"
+  },
+  {
+   "count": 1,
+   "failed": 0,
+   "last": 1794311880,
+   "name": "cleanup temp"
+  },
+  {
+   "count": 1,
+   "failed": 1,
+   "last": 1794305000,
+   "name": "Backup"
+  }
+ ],
+ "running": [
+  {
+   "label": "Nightly digest",
+   "lastTool": "web_fetch",
+   "progress": "Fetched 3 of 5 feeds",
+   "runtime": "node",
+   "startedAt": 1794311400,
+   "status": "running"
+  },
+  {
+   "label": "cleanup temp",
+   "lastTool": null,
+   "progress": "",
+   "runtime": "node",
+   "startedAt": null,
+   "status": "queued"
+  }
+ ],
+ "schedules": [
+  {
+   "cron": "0 7 * * *",
+   "enabled": true,
+   "last": 1794232000,
+   "lastStatus": "ok",
+   "name": "digest",
+   "next": 1794315600
+  },
+  {
+   "cron": null,
+   "enabled": false,
+   "last": null,
+   "lastStatus": null,
+   "name": "paused job",
+   "next": null
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+{
+ "file": "__HOME__/.gemini/antigravity/brain/agy-quiet-0007/.system_generated/logs/transcript.jsonl",
+ "tail": {
+  "ask": null,
+  "askTs": null,
+  "branch": null,
+  "contextTokens": 1200,
+  "cwd": null,
+  "effort": null,
+  "events": [
+   {
+    "body": "Read the whole codebase.",
+    "id": "0:you",
+    "k": "you",
+    "t": 1794308410,
+    "title": "Read the whole codebase."
+   },
+   {
+    "body": "docs://guide",
+    "id": "1:read_resource",
+    "k": "tool",
+    "t": 1794308420,
+    "title": "Read docs://guide",
+    "tool": "read_resource",
+    "verb": "read"
+   }
+  ],
+  "lastText": null,
+  "lastTextTs": null,
+  "lastTs": 1794308420,
+  "mode": null,
+  "model": "Gemini",
+  "mtime": 1794311940,
+  "pending": [
+   {
+    "body": "docs://guide",
+    "id": "1:read_resource",
+    "k": "tool",
+    "t": 1794308420,
+    "title": "Read docs://guide",
+    "tool": "read_resource",
+    "verb": "read"
+   }
+  ],
+  "plan": [],
+  "prompt": "Read the whole codebase.",
+  "promptTs": 1794308410,
+  "prs": [],
+  "recap": null,
+  "size": 526,
+  "title": null,
+  "turnEnded": false
+ }
+}

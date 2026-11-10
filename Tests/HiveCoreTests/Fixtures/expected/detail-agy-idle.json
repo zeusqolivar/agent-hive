@@ -1,0 +1,102 @@
+{
+ "ask": null,
+ "branch": null,
+ "canReply": false,
+ "contextTokens": 500,
+ "cwd": "/fixture/Projects/site",
+ "doing": null,
+ "effort": null,
+ "entry": "antigravity",
+ "events": [
+  {
+   "body": "Deployed the preview. It is live on the staging site.",
+   "id": "3:say",
+   "k": "say",
+   "t": 1794308040,
+   "title": "Deployed the preview. It is live on the staging site."
+  },
+  {
+   "body": "npm run deploy",
+   "id": "1:run_command",
+   "k": "tool",
+   "t": 1794308020,
+   "title": "Run npm run deploy",
+   "tool": "run_command",
+   "verb": "run"
+  },
+  {
+   "body": "Deploy the preview.",
+   "id": "0:you",
+   "k": "you",
+   "t": 1794308010,
+   "title": "Deploy the preview."
+  }
+ ],
+ "formerNames": [],
+ "group": "idle",
+ "headline": "Deployed the preview.",
+ "helpers": [],
+ "hostId": "antigravity",
+ "id": "agy-idle-0003",
+ "lastText": "Deployed the preview. It is live on the staging site.",
+ "lastTextTs": 1794308040,
+ "lastTs": 1794308400,
+ "live": true,
+ "mode": null,
+ "model": "Gemini",
+ "name": "Deploy the preview.",
+ "pid": 424242,
+ "plan": null,
+ "planItems": [],
+ "processes": {
+  "commands": [
+   {
+    "cmd": "/bin/zsh -c npm run build",
+    "cpu": 30.0,
+    "pid": 424244,
+    "rssMB": 80,
+    "uptime": 60
+   },
+   {
+    "cmd": "/Applications/Antigravity.app/Contents/Resources/bin/language_server --port 1",
+    "cpu": 1.5,
+    "pid": 424243,
+    "rssMB": 300,
+    "uptime": 7100
+   }
+  ],
+  "cpu": 36.0,
+  "rssMB": 1280,
+  "uptime": 7200
+ },
+ "project": "site",
+ "prompt": "Deploy the preview.",
+ "promptTs": 1794308010,
+ "provider": "google",
+ "prs": [],
+ "questions": [],
+ "reason": null,
+ "recap": null,
+ "replyNote": null,
+ "resumeCommand": "open -a Antigravity /fixture/Projects/site",
+ "shortCwd": "/fixture/Projects/site",
+ "startedAt": 1794308000,
+ "statusSince": 1794308400,
+ "subagentList": [],
+ "subagents": {
+  "running": 0,
+  "total": 0
+ },
+ "tokens": {
+  "cacheRead": 200,
+  "cacheWrite": 0,
+  "input": 1500,
+  "output": 75,
+  "responses": 2
+ },
+ "transcriptMB": 0.0,
+ "uptime": 7200,
+ "version": "1.2.3",
+ "webUrl": "http://127.0.0.1:50001/c/agy-idle-0003",
+ "worktree": null
+}

@@ -1,0 +1,15 @@
+{
+ "doing": "subagents",
+ "group": "working",
+ "headline": "Running Build the package",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "busy"
+  },
+  "subsRunning": 1,
+  "transcript": "main"
+ },
+ "questions": [],
+ "reason": null
+}

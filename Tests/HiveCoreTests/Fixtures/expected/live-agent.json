@@ -1,0 +1,36 @@
+{
+ "items": [
+  {
+   "id": "sess-main-0001-u001:0",
+   "k": "you",
+   "sub": "Find the parser callers",
+   "t": 1794311120,
+   "text": "List every caller of Parser."
+  },
+  {
+   "id": "sess-main-0001-u002:0",
+   "k": "say",
+   "sub": "Find the parser callers",
+   "t": 1794311140,
+   "text": "Searching for callers."
+  },
+  {
+   "body": "Parser\\(",
+   "id": "toolu_s1",
+   "k": "tool",
+   "out": "src/main.swift:3",
+   "sub": "Find the parser callers",
+   "t": 1794311160,
+   "text": "Search for Parser\\("
+  },
+  {
+   "id": "toolu_s2",
+   "k": "file",
+   "open": true,
+   "quiet": true,
+   "sub": "Find the parser callers",
+   "t": 1794311200,
+   "text": "Read ~/Projects/demo/src/main.swift"
+  }
+ ]
+}

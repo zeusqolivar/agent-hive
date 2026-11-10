@@ -1,0 +1,15 @@
+{
+ "doing": null,
+ "group": "idle",
+ "headline": "Shipped the release notes for version 2.0.",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "idle"
+  },
+  "subsRunning": 0,
+  "transcript": "done"
+ },
+ "questions": [],
+ "reason": null
+}

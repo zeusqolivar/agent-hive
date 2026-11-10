@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    {
+      "name": "toolkit",
+      "version": "1.2.0",
+      "source": "./toolkit"
+    },
+    {
+      "name": "solo",
+      "source": "./solo"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+ "doing": null,
+ "group": "needs",
+ "headline": "Waiting for a sandbox decision",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "waiting",
+   "waitingFor": "a sandbox decision"
+  },
+  "subsRunning": 0,
+  "transcript": "done"
+ },
+ "questions": [],
+ "reason": "other"
+}

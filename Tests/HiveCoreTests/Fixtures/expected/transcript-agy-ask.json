@@ -1,0 +1,61 @@
+{
+ "file": "__HOME__/.gemini/antigravity/brain/agy-ask-0002/.system_generated/logs/transcript.jsonl",
+ "tail": {
+  "ask": "Dark or light theme?",
+  "askTs": 1794311120,
+  "branch": null,
+  "contextTokens": 1200,
+  "cwd": null,
+  "effort": null,
+  "events": [
+   {
+    "body": "Pick a colour scheme.",
+    "id": "0:you",
+    "k": "you",
+    "t": 1794311110,
+    "title": "Pick a colour scheme."
+   },
+   {
+    "body": "Two good options.",
+    "id": "1:say",
+    "k": "say",
+    "t": 1794311120,
+    "title": "Two good options."
+   },
+   {
+    "body": "{'questions': '[{\"question\": \"Dark or light theme?\", \"options\": [\"Dark\", \"Light\"]}]'}",
+    "id": "1:ask_question",
+    "k": "tool",
+    "t": 1794311120,
+    "title": "Use ask_question",
+    "tool": "ask_question",
+    "verb": "tool"
+   }
+  ],
+  "lastText": "Two good options.",
+  "lastTextTs": 1794311120,
+  "lastTs": 1794311120,
+  "mode": null,
+  "model": "Gemini",
+  "mtime": 1794311940,
+  "pending": [
+   {
+    "body": "{'questions': '[{\"question\": \"Dark or light theme?\", \"options\": [\"Dark\", \"Light\"]}]'}",
+    "id": "1:ask_question",
+    "k": "tool",
+    "t": 1794311120,
+    "title": "Use ask_question",
+    "tool": "ask_question",
+    "verb": "tool"
+   }
+  ],
+  "plan": [],
+  "prompt": "Pick a colour scheme.",
+  "promptTs": 1794311110,
+  "prs": [],
+  "recap": null,
+  "size": 604,
+  "title": null,
+  "turnEnded": false
+ }
+}

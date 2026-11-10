@@ -1,0 +1,23 @@
+{
+ "doing": "run",
+ "group": "working",
+ "headline": "Waiting on npm run dev",
+ "input": {
+  "commands": [
+   {
+    "cmd": "/bin/zsh -c npm run dev",
+    "cpu": 0.0,
+    "pid": 1,
+    "rssMB": 1,
+    "uptime": 5
+   }
+  ],
+  "raw": {
+   "status": "busy"
+  },
+  "subsRunning": 0,
+  "transcript": "done"
+ },
+ "questions": [],
+ "reason": null
+}

@@ -1,0 +1,15 @@
+{
+ "doing": "subagents",
+ "group": "working",
+ "headline": "Asking Which database should I use?",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "busy"
+  },
+  "subsRunning": 1,
+  "transcript": "question"
+ },
+ "questions": [],
+ "reason": null
+}

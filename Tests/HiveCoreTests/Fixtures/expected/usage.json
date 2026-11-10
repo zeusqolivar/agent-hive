@@ -1,0 +1,250 @@
+{
+ "days": [
+  {
+   "cacheRead": 0,
+   "cacheWrite": 0,
+   "day": "2026-11-04",
+   "input": 0,
+   "output": 0,
+   "responses": 0,
+   "today": 0
+  },
+  {
+   "cacheRead": 0,
+   "cacheWrite": 0,
+   "day": "2026-11-05",
+   "input": 0,
+   "output": 0,
+   "responses": 0,
+   "today": 0
+  },
+  {
+   "cacheRead": 0,
+   "cacheWrite": 0,
+   "day": "2026-11-06",
+   "input": 0,
+   "output": 0,
+   "responses": 0,
+   "today": 0
+  },
+  {
+   "cacheRead": 0,
+   "cacheWrite": 0,
+   "day": "2026-11-07",
+   "input": 0,
+   "output": 0,
+   "responses": 0,
+   "today": 0
+  },
+  {
+   "cacheRead": 4000,
+   "cacheWrite": 300,
+   "day": "2026-11-08",
+   "input": 312,
+   "output": 115,
+   "responses": 2,
+   "today": 0
+  },
+  {
+   "cacheRead": 0,
+   "cacheWrite": 0,
+   "day": "2026-11-09",
+   "input": 0,
+   "output": 0,
+   "responses": 0,
+   "today": 0
+  },
+  {
+   "cacheRead": 255300,
+   "cacheWrite": 18900,
+   "day": "2026-11-10",
+   "input": 15056,
+   "output": 1562,
+   "responses": 76,
+   "today": 0
+  }
+ ],
+ "filesDone": 16,
+ "filesTotal": 16,
+ "models": [
+  {
+   "cacheRead": 232000,
+   "cacheWrite": 17400,
+   "input": 696,
+   "name": "claude-opus-5-5",
+   "output": 910,
+   "responses": 58,
+   "today": 810
+  },
+  {
+   "cacheRead": 3300,
+   "cacheWrite": 0,
+   "input": 14600,
+   "name": "Gemini",
+   "output": 660,
+   "responses": 14,
+   "today": 645
+  },
+  {
+   "cacheRead": 24000,
+   "cacheWrite": 1800,
+   "input": 72,
+   "name": "claude-haiku-5",
+   "output": 107,
+   "responses": 6,
+   "today": 107
+  }
+ ],
+ "perSession": {
+  "agy-ancient-0006": {
+   "cacheRead": 0,
+   "cacheWrite": 0,
+   "input": 300,
+   "output": 15,
+   "responses": 1
+  },
+  "agy-run-0001": {
+   "cacheRead": 2700,
+   "cacheWrite": 0,
+   "input": 10800,
+   "output": 470,
+   "responses": 9
+  },
+  "sess-main-0001": {
+   "cacheRead": 72000,
+   "cacheWrite": 5400,
+   "input": 216,
+   "output": 430,
+   "responses": 18
+  },
+  "sess-missing-0000": null,
+  "sess-usage-0005": {
+   "cacheRead": 12000,
+   "cacheWrite": 900,
+   "input": 36,
+   "output": 147,
+   "responses": 3
+  }
+ },
+ "projects": [
+  {
+   "cacheRead": 128000,
+   "cacheWrite": 9600,
+   "input": 384,
+   "name": "demo",
+   "output": 710,
+   "responses": 32,
+   "today": 710
+  },
+  {
+   "cacheRead": 2900,
+   "cacheWrite": 0,
+   "input": 11800,
+   "name": "gemini app",
+   "output": 520,
+   "responses": 10,
+   "today": 520
+  },
+  {
+   "cacheRead": 128000,
+   "cacheWrite": 9600,
+   "input": 384,
+   "name": "other",
+   "output": 307,
+   "responses": 32,
+   "today": 207
+  },
+  {
+   "cacheRead": 200,
+   "cacheWrite": 0,
+   "input": 1500,
+   "name": "site",
+   "output": 75,
+   "responses": 2,
+   "today": 75
+  },
+  {
+   "cacheRead": 200,
+   "cacheWrite": 0,
+   "input": 1000,
+   "name": "app",
+   "output": 50,
+   "responses": 1,
+   "today": 50
+  },
+  {
+   "cacheRead": 0,
+   "cacheWrite": 0,
+   "input": 300,
+   "name": "Google Antigravity",
+   "output": 15,
+   "responses": 1,
+   "today": 0
+  }
+ ],
+ "ready": true,
+ "scannedAt": 1794312000,
+ "sessions": [
+  {
+   "id": "agy-run-0001",
+   "name": "Build the landing page for the gemini app.",
+   "output": 470,
+   "responses": 9
+  },
+  {
+   "id": "sess-main-0001",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "output": 430,
+   "responses": 18
+  },
+  {
+   "id": "sess-big-0004",
+   "name": "Summarise the logs.",
+   "output": 160,
+   "responses": 29
+  },
+  {
+   "id": "sess-usage-0005",
+   "name": "Count tokens.",
+   "output": 147,
+   "responses": 3
+  },
+  {
+   "id": "sess-asked-0002",
+   "name": "Make the release build work.",
+   "output": 80,
+   "responses": 4
+  },
+  {
+   "id": "agy-idle-0003",
+   "name": "Deploy the preview.",
+   "output": 75,
+   "responses": 2
+  },
+  {
+   "id": "sess-done-0003",
+   "name": "Release notes",
+   "output": 60,
+   "responses": 3
+  },
+  {
+   "id": "sess-questions-0011",
+   "name": "Add dark mode to the settings page.",
+   "output": 60,
+   "responses": 3
+  },
+  {
+   "id": "agy-ask-0002",
+   "name": "Pick a colour scheme.",
+   "output": 50,
+   "responses": 1
+  },
+  {
+   "id": "agy-quiet-0007",
+   "name": "Read the whole codebase.",
+   "output": 50,
+   "responses": 1
+  }
+ ],
+ "today": "2026-11-10"
+}

@@ -1,0 +1,91 @@
+{
+ "file": "__HOME__/.claude/projects/-fixture-Projects-other/sess-usage-0005.jsonl",
+ "tail": {
+  "ask": null,
+  "askTs": null,
+  "branch": "main",
+  "contextTokens": 4312,
+  "cwd": "__HOME__/Projects/other",
+  "effort": "high",
+  "events": [
+   {
+    "body": "Count tokens.",
+    "id": "sess-usage-0005-u001:0",
+    "k": "you",
+    "t": 1794052820,
+    "title": "Count tokens."
+   },
+   {
+    "body": "Two days ago.",
+    "id": "sess-usage-0005-u002:0",
+    "k": "say",
+    "t": 1794135620,
+    "title": "Two days ago."
+   },
+   {
+    "body": "Ten days ago, outside the window.",
+    "id": "sess-usage-0005-u003:0",
+    "k": "say",
+    "t": 1793448020,
+    "title": "Ten days ago, outside the window."
+   },
+   {
+    "body": "Block with 10 tokens so far.",
+    "id": "sess-usage-0005-u004:0",
+    "k": "say",
+    "t": 1794310220,
+    "title": "Block with 10 tokens so far."
+   },
+   {
+    "body": "Block with 25 tokens so far.",
+    "id": "sess-usage-0005-u005:0",
+    "k": "say",
+    "t": 1794310240,
+    "title": "Block with 25 tokens so far."
+   },
+   {
+    "body": "Block with 40 tokens so far.",
+    "id": "sess-usage-0005-u006:0",
+    "k": "say",
+    "t": 1794310260,
+    "title": "Block with 40 tokens so far."
+   },
+   {
+    "body": "Same output again, no growth.",
+    "id": "sess-usage-0005-u007:0",
+    "k": "say",
+    "t": 1794310280,
+    "title": "Same output again, no growth."
+   },
+   {
+    "body": "A small model reply.",
+    "id": "sess-usage-0005-u008:0",
+    "k": "say",
+    "t": 1794310300,
+    "title": "A small model reply."
+   },
+   {
+    "body": "Synthetic.",
+    "id": "sess-usage-0005-u009:0",
+    "k": "say",
+    "t": 1794310320,
+    "title": "Synthetic."
+   }
+  ],
+  "lastText": "Synthetic.",
+  "lastTextTs": 1794310320,
+  "lastTs": 1794310320,
+  "mode": null,
+  "model": "claude-haiku-5",
+  "mtime": 1794311940,
+  "pending": [],
+  "plan": [],
+  "prompt": "Count tokens.",
+  "promptTs": 1794052820,
+  "prs": [],
+  "recap": null,
+  "size": 5511,
+  "title": null,
+  "turnEnded": false
+ }
+}

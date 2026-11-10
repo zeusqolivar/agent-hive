@@ -1,0 +1,28 @@
+{
+ "doing": null,
+ "group": "needs",
+ "headline": "4 open questions: Whether it should follow the system setting by default.",
+ "input": {
+  "commands": [
+   {
+    "cmd": "/bin/zsh -c npm run dev",
+    "cpu": 0.0,
+    "pid": 1,
+    "rssMB": 1,
+    "uptime": 5
+   }
+  ],
+  "raw": {
+   "status": "busy"
+  },
+  "subsRunning": 0,
+  "transcript": "questions"
+ },
+ "questions": [
+  "Whether it should follow the system setting by default.",
+  "The contrast of the disabled buttons",
+  "Ship it behind a flag?",
+  "Want me to add a screenshot to the README?"
+ ],
+ "reason": "questions"
+}

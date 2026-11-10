@@ -1,0 +1,16 @@
+{
+ "doing": null,
+ "group": "needs",
+ "headline": "Waiting for your permission",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "waiting",
+   "waitingFor": "permission prompt"
+  },
+  "subsRunning": 0,
+  "transcript": "done"
+ },
+ "questions": [],
+ "reason": "permission"
+}

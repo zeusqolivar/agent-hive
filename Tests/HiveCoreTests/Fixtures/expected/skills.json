@@ -1,0 +1,157 @@
+{
+ "folders": [
+  {
+   "key": "account",
+   "kind": "account",
+   "note": "Synced from claude.ai, which keeps them up to date.",
+   "skills": [
+    {
+     "description": "Synced from the account.",
+     "name": "helper",
+     "version": null
+    }
+   ],
+   "title": "Your Claude account"
+  },
+  {
+   "key": "Claude Code",
+   "kind": "folder",
+   "note": "Copied in by hand or by another tool, with no update source Agent Hive can use.",
+   "skills": [
+    {
+     "description": "Says hello to the user.",
+     "name": "demo-skill",
+     "version": "1.4.2"
+    },
+    {
+     "description": "First line of the description. version: '0.3",
+     "name": "multi-line",
+     "version": "0.3"
+    },
+    {
+     "description": "",
+     "name": "no-front-matter",
+     "version": null
+    }
+   ],
+   "title": "Claude Code"
+  },
+  {
+   "key": "Shared agents",
+   "kind": "folder",
+   "note": "Copied in by hand or by another tool, with no update source Agent Hive can use.",
+   "skills": [
+    {
+     "description": "Shared skill.",
+     "name": "shared-one",
+     "origin": "github:example/skills",
+     "updatedAt": 1793692800,
+     "version": null
+    }
+   ],
+   "title": "Shared agents"
+  },
+  {
+   "key": "OpenClaw",
+   "kind": "folder",
+   "note": "`Update all` also runs OpenClaw's own updater, which covers skills installed from ClawHub.",
+   "skills": [
+    {
+     "description": "Local OpenClaw skill.",
+     "name": "claw-local",
+     "version": null
+    }
+   ],
+   "title": "OpenClaw"
+  },
+  {
+   "key": "OpenClaw bundled",
+   "kind": "folder",
+   "note": "These ship with OpenClaw, so they change when OpenClaw itself updates.",
+   "skills": [
+    {
+     "description": "Bundled with OpenClaw.",
+     "name": "claw-skill",
+     "version": null
+    }
+   ],
+   "title": "OpenClaw bundled",
+   "version": "9.9.9"
+  },
+  {
+   "key": "Google Antigravity",
+   "kind": "folder",
+   "note": "Copied in by hand or by another tool, with no update source Agent Hive can use.",
+   "skills": [
+    {
+     "description": "An Antigravity skill.",
+     "name": "agy-skill",
+     "version": null
+    }
+   ],
+   "title": "Google Antigravity"
+  },
+  {
+   "key": "Google Antigravity builtin",
+   "kind": "folder",
+   "note": "Copied in by hand or by another tool, with no update source Agent Hive can use.",
+   "skills": [
+    {
+     "description": "Ships with Antigravity.",
+     "name": "agy-builtin",
+     "version": "2.0.1"
+    }
+   ],
+   "title": "Google Antigravity builtin"
+  }
+ ],
+ "marketplacesAt": 1793872800,
+ "plugins": [
+  {
+   "enabled": true,
+   "key": "toolkit@market",
+   "kind": "plugin",
+   "latest": "1.2.0",
+   "skills": [
+    {
+     "description": "Lints code.",
+     "name": "lint",
+     "version": null
+    }
+   ],
+   "source": "market",
+   "status": "update",
+   "title": "toolkit",
+   "updatedAt": 1793527200,
+   "version": "1.0.0"
+  },
+  {
+   "enabled": false,
+   "key": "solo@market",
+   "kind": "plugin",
+   "latest": "2.0.0",
+   "skills": [],
+   "source": "market",
+   "status": "current",
+   "title": "solo",
+   "updatedAt": 1793613600,
+   "version": "2.0.0"
+  }
+ ],
+ "synced": [
+  {
+   "key": "synced:synced-plugin",
+   "kind": "synced",
+   "skills": [
+    {
+     "description": "",
+     "name": "sync-skill",
+     "version": null
+    }
+   ],
+   "title": "Synced Plugin",
+   "version": "3.1.0"
+  }
+ ],
+ "total": 11
+}

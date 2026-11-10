@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Hive</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 22'%3E%3Cpath fill='%23F5B700' d='M10 1l9 5v10l-9 5-9-5V6z'/%3E%3C/svg%3E">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#E8EBF1; --panel:#F8F9FC; --raised:#FFFFFF; --hover:#EDF0F6; --selected:#DFE5F2;
+  --ink:#192132; --ink2:#465064; --ink3:#626C80; --line:#D2D7E2;
+  --honey:#F5B700; --honey-soft:#FCE9AE; --honey-ink:#2A1F00; --honey-ink2:#574400;
+  --work:#0B7480; --accent:#2F4DB0; --error:#B9301F; --good:#23744A; --bar:#3F5FBF;
+  --rm-wall:#CFE0E3; --rm-floor:#E3E8EF; --rm-tile:#D3DAE5; --rm-wood:#B98A5E; --rm-wood2:#8F6642; --rm-chair:#7D8799;
+  --rm-board:#2F4F46; --rm-sky:#BFE3F5; --rm-rug:#BCD8CF; --rm-panel:#FFFFFF; --rm-dark:#343B4D;
+  --sans:"Avenir Next","Avenir","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#141824; --panel:#1B2030; --raised:#242A3C; --hover:#232939; --selected:#2C3550;
+  --ink:#E7EAF2; --ink2:#AEB6C7; --ink3:#939CB0; --line:#30374A;
+  --honey-soft:#4A3B0C;
+  --rm-wall:#262E42; --rm-floor:#1C2233; --rm-tile:#262D40; --rm-wood:#6A5140; --rm-wood2:#4C3A2D; --rm-chair:#3D4558;
+  --rm-board:#1E2F2B; --rm-sky:#141B33; --rm-rug:#2C4A44; --rm-panel:#2A3145; --rm-dark:#10131C;
+  --work:#4FC4D0; --accent:#9DB2F7; --error:#F2806F; --good:#62C894; --bar:#6F8CE8;
+}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--sans);display:flex;flex-direction:column;overflow:hidden}
+a{color:var(--accent)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code,pre{font-family:var(--mono);font-size:12.5px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:20px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex:none}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
+.brand svg{width:18px;height:20px;fill:var(--honey)}
+nav{display:flex;gap:2px}
+nav a{padding:5px 11px;border-radius:7px;text-decoration:none;color:var(--ink2);font-weight:600;white-space:nowrap}
+nav a:hover{background:var(--hover)}
+nav a[aria-current=page]{background:var(--ink);color:var(--panel)}
+.tally{margin-left:auto;color:var(--ink2);font-size:14px;white-space:nowrap}
+.tally b{color:var(--ink)}
+#stale{display:none;padding:7px 16px;background:var(--error);color:#fff;font-weight:600;flex:none}
+
+/* agents view */
+main{flex:1;min-height:0;display:flex}
+.view{flex:1;min-width:0;display:none}
+.view.on{display:flex}
+.list{width:390px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--panel);min-height:0}
+.search{padding:10px 12px;border-bottom:1px solid var(--line);flex:none}
+.search input{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--raised)}
+#rows{flex:1;overflow-y:auto;overscroll-behavior:contain}
+.group>button{all:unset;box-sizing:border-box;display:flex;gap:8px;align-items:baseline;width:100%;padding:13px 14px 5px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink)}
+.group>button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.group>button .n{color:var(--ink3);font-weight:600}
+.group>button .chev{margin-left:auto;color:var(--ink3);font-size:11px}
+.row{display:grid;grid-template-columns:20px 1fr auto;column-gap:9px;padding:9px 14px;text-decoration:none;color:inherit;border-left:3px solid transparent}
+.row:hover{background:var(--hover)}
+.row.sel{background:var(--selected);border-left-color:var(--ink)}
+.row .hex{margin-top:2px}
+.row .name{font-weight:600;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.row .ago{color:var(--ink3);font-size:12.5px;white-space:nowrap}
+.row .where,.row .what{grid-column:2/4;min-width:0;overflow:hidden;font-size:13px}
+.row .where{color:var(--ink3);white-space:nowrap;text-overflow:ellipsis}
+.row .what{color:var(--ink2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.row.needs{background:var(--honey);color:var(--honey-ink);margin:0 8px 5px;border-radius:9px;border-left:0;padding-left:9px}
+.row.needs:hover{filter:brightness(1.05)}
+.row.needs.sel{box-shadow:inset 0 0 0 2px var(--honey-ink)}
+.row.needs .where,.row.needs .ago{color:var(--honey-ink2)}
+.row.needs .what{color:var(--honey-ink);font-weight:600}
+.hex{width:16px;height:18px;display:block;flex:none}
+.hex path{stroke-width:2}
+.hex.needs path{fill:var(--honey-ink);stroke:var(--honey-ink)}
+.hex.working path{fill:var(--work);stroke:var(--work)}
+.hex.idle path{fill:none;stroke:var(--ink3)}
+.hex.ended path{fill:none;stroke:var(--ink3);stroke-dasharray:3 3}
+.hex.working{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:0 6px;border-radius:5px;background:var(--hover);color:var(--ink2);white-space:nowrap}
+.tag.warn{background:var(--honey-soft);color:var(--ink)}
+.keys{flex:none;padding:7px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+.keys kbd{font:600 11.5px var(--mono);color:var(--ink2);padding:0 4px;border:1px solid var(--line);border-radius:4px;background:var(--raised)}
+.empty{padding:24px 16px;color:var(--ink2)}
+
+/* detail */
+#detail{flex:1;min-width:0;overflow-y:auto;overscroll-behavior:contain}
+.hero{padding:22px 28px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+.hero.needs{background:var(--honey);color:var(--honey-ink);border-bottom-color:transparent}
+.hero .who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-weight:600;font-size:14px}
+.hero .who .where{font-weight:400;color:var(--ink2)}
+.hero.needs .who .where{color:var(--honey-ink2)}
+.hero h1{margin:8px 0 0;font-size:25px;line-height:1.22;font-weight:600;letter-spacing:-.015em;max-width:44em;overflow-wrap:anywhere}
+.hero .since{margin-top:6px;color:var(--ink2);font-size:14px}
+.hero.needs .since{color:var(--honey-ink2)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--raised);font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.btn.main{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.btn.main:hover{opacity:.9;background:var(--ink)}
+.reply{display:flex;gap:8px;align-items:flex-end;margin-top:12px;max-width:720px}
+.reply textarea{flex:1;min-height:44px;font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--raised);color:var(--ink);resize:vertical}
+.replynote{align-self:center;font-size:14px;color:var(--ink2)}
+.hero.needs .btn{border-color:var(--honey-ink);background:transparent;color:var(--honey-ink)}
+.hero.needs .btn:hover{background:rgba(0,0,0,.08)}
+.hero.needs .btn.main{background:var(--honey-ink);color:var(--honey)}
+.columns{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:0 28px;padding:6px 28px 40px;align-items:start}
+section{margin-top:20px}
+h2{font-size:14px;font-weight:700;margin:0 0 8px;display:flex;align-items:baseline;gap:8px}
+h2 .n{color:var(--ink3);font-weight:600}
+h2 .right{margin-left:auto;font-weight:500;font-size:13px;color:var(--ink2)}
+.quote{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-width:70ch}
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden}
+.linkish{all:unset;color:var(--accent);cursor:pointer;font-size:13.5px;font-weight:600}
+.linkish:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.questions{margin:0;padding-left:20px;max-width:70ch}
+.questions li{margin:3px 0;font-weight:600}
+.plan{list-style:none;margin:0;padding:0}
+.plan li{display:flex;gap:8px;padding:2px 0;color:var(--ink2)}
+.plan li::before{content:"○";color:var(--ink3);flex:none;width:14px;text-align:center}
+.plan li.completed{color:var(--ink3);text-decoration:line-through;text-decoration-color:var(--line)}
+.plan li.completed::before{content:"✓";color:var(--good);text-decoration:none}
+.plan li.in_progress{color:var(--ink);font-weight:600}
+.plan li.in_progress::before{content:"●";color:var(--work)}
+.sub{border-top:1px solid var(--line)}
+.sub:last-child{border-bottom:1px solid var(--line)}
+.sub>button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;width:100%;padding:7px 2px;cursor:pointer}
+.sub>button:hover{background:var(--hover)}
+.sub>button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.sub .st{font-size:12.5px;font-weight:600;color:var(--ink3)}
+.sub.running .st{color:var(--work)}
+.sub.stalled .st{color:var(--error)}
+.sub .desc{min-width:0}
+.sub .desc small{display:block;color:var(--ink3);font-size:12.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sub .when{color:var(--ink3);font-size:12.5px}
+.sub .inner{padding:4px 2px 12px 74px;font-size:13.5px}
+.tl{list-style:none;margin:0;padding:0}
+.ev{display:grid;grid-template-columns:66px 58px minmax(0,1fr);gap:0 8px;padding:5px 0;border-top:1px solid var(--line);font-size:14px}
+.ev time{color:var(--ink3);font-size:12.5px;padding-top:1px}
+.ev .k{font-size:12.5px;font-weight:600;color:var(--ink3);padding-top:1px}
+.ev.you .k{color:var(--accent)}
+.ev.say .k,.ev.recap .k{color:var(--ink)}
+.ev.err .k,.ev.err .t{color:var(--error)}
+.ev.you .t,.ev.recap .t{font-weight:600}
+.ev.tool .t{color:var(--ink2)}
+.ev.event .t{color:var(--ink3)}
+.ev .t{overflow-wrap:anywhere}
+.ev button.t{all:unset;cursor:pointer;display:block;overflow-wrap:anywhere}
+.ev.you button.t,.ev.recap button.t{font-weight:600}
+.ev.tool button.t{color:var(--ink2)}
+.ev.err button.t{color:var(--error)}
+.ev button.t:hover{color:var(--accent)}
+.ev button.t:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ev .more{grid-column:3;margin-top:5px}
+.ev .say-body{white-space:pre-wrap;overflow-wrap:anywhere;max-width:72ch}
+pre{margin:0 0 6px;padding:8px 10px;background:var(--bg);border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow-y:auto}
+.ev .src{font-size:12.5px;color:var(--ink3);text-decoration:none}
+.ev .src:hover{color:var(--accent)}
+dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:14px}
+dt{color:var(--ink3)}
+dd{margin:0;overflow-wrap:anywhere;text-align:right}
+.proc{font-size:13px;padding:5px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.proc small{display:block;color:var(--ink3)}
+.toggle{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+
+/* pages */
+.page{flex:1;overflow-y:auto;padding:22px 28px 48px}
+.page>.wrap{width:100%;max-width:1020px;margin:0 auto}
+.page h1{font-size:25px;font-weight:600;letter-spacing:-.015em;margin:0;line-height:1.25}
+.page .lead{color:var(--ink2);margin:5px 0 0;max-width:70ch}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:right;font-weight:600;color:var(--ink3);font-size:13px;padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left;padding-left:0}
+td:first-child{overflow-wrap:anywhere}
+td a{text-decoration:none}
+td a:hover{text-decoration:underline}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 32px}
+.chart{position:relative;display:flex;align-items:flex-end;gap:10px;height:190px;border-bottom:1px solid var(--line);margin-top:24px}
+.day{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;border-radius:6px 6px 0 0;outline-offset:2px;cursor:default}
+.day:hover{background:var(--hover)}
+.day .bar{width:min(46px,70%);background:var(--bar);border-radius:4px 4px 0 0;min-height:2px}
+.day .val{font-size:13px;font-weight:600;margin-bottom:3px;white-space:nowrap}
+.days{display:flex;gap:10px;margin-top:5px;font-size:13px;color:var(--ink3)}
+.days span{flex:1;text-align:center}
+.days .now{color:var(--ink);font-weight:600}
+#tip{position:fixed;z-index:5;display:none;pointer-events:none;background:var(--ink);color:var(--panel);padding:7px 10px;border-radius:7px;font-size:13px;line-height:1.5;max-width:260px}
+.note{color:var(--ink3);font-size:13.5px;max-width:70ch}
+.feed .ev{grid-template-columns:66px 58px 170px minmax(0,1fr)}
+.feed .ev .sess{font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-decoration:none;color:var(--ink)}
+.feed .ev .sess:hover{color:var(--accent)}
+.feed .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.filter{display:flex;gap:14px;align-items:center;margin-top:12px;font-size:14px;color:var(--ink2)}
+.skillroot{margin-top:12px}
+.skillroot h3{font-size:14px;font-weight:600;margin:0 0 4px}
+.names{display:flex;flex-wrap:wrap;gap:4px}
+.names .tag{font-weight:500}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 14px;border-radius:8px;font-weight:600;display:none;z-index:6;max-width:80vw}
+
+/* classroom */
+#v-classroom.on{display:flex}
+#roomBox{flex:1;min-width:0;position:relative;overflow:auto;background:var(--bg)}
+#roomBox canvas{position:absolute;left:0;top:0;display:block}
+#roster{width:320px;flex:none;overflow-y:auto;border-left:1px solid var(--line);background:var(--panel);font-size:14px}
+#roster[hidden],#roomEditor[hidden],#editRoom[hidden]{display:none}
+#editRoom{position:absolute;top:10px;left:10px;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+#roomEditor{width:320px;flex:none;overflow-y:auto;border-left:1px solid var(--line);background:var(--panel);font-size:14px;display:flex;flex-direction:column}
+#roomEditor section,#roomEditor .ed-head{padding:12px 14px;border-bottom:1px solid var(--line)}
+#roomEditor h2{font-size:16px;margin:0}
+#roomEditor h3{font-size:13.5px;margin:0 0 6px}
+#roomEditor .note{margin:6px 0 0}
+#roomEditor .note.warn{color:var(--error)}
+#edStatus{margin:0;padding:8px 14px;min-height:20px;color:var(--ink2);font-size:13.5px}
+#edStatus.bad{color:var(--error);font-weight:600}
+.ed-cat{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ed-kind{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 10px;touch-action:none;cursor:grab}
+.ed-kind small{color:var(--ink3);font-weight:500;font-size:12px}
+.ed-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:8px}
+.ed-row label{display:flex;gap:6px;align-items:center}
+.ed-row input[type=number]{width:62px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--raised);color:var(--ink)}
+.ed-row select{padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--raised);color:var(--ink)}
+.ed-row input[type=color]{width:38px;height:28px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+.ed-row .btn,.ed-acts .btn{padding:4px 10px;font-size:13px}
+.ed-acts{display:flex;flex-wrap:wrap;gap:6px}
+.ed-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 14px;margin-top:auto;position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+#roster .card{padding:14px;border-bottom:1px solid var(--line)}
+#roster .card.needs{background:var(--honey);color:var(--honey-ink)}
+#roster .card h2{font-size:16px;margin:0}
+#roster .card p{margin:6px 0 0}
+#roster .card .acts{margin-top:10px}
+#roster .card.needs .btn{background:transparent;border-color:var(--honey-ink);color:var(--honey-ink)}
+#roster h3{font-size:13.5px;margin:0;padding:12px 14px 4px}
+.rc{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;padding:5px 14px;text-decoration:none;color:inherit}
+.rc:hover,.rc.sel{background:var(--hover)}
+.rc .sw{width:12px;height:14px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.rc .nm{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600}
+.rc .st{color:var(--ink3);font-size:12.5px;white-space:nowrap}
+.rc .what{grid-column:2/4;color:var(--ink2);font-size:12.5px;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.rc.subrow{margin-left:22px;padding-top:3px;padding-bottom:3px;grid-template-columns:10px 1fr auto;font-size:13px}
+.rc.subrow .sw{width:9px;height:10px}
+.rc.subrow .nm{font-weight:500}
+.macnow{padding:10px 14px;border-top:1px solid var(--line);font-size:13px}
+.macnow h3{padding:0 0 4px}
+.macnow div{display:flex;justify-content:space-between;gap:10px;padding:1px 0}
+.macnow span:last-child{color:var(--ink3);white-space:nowrap;font-variant-numeric:tabular-nums}
+.legend{padding:12px 14px;margin:8px 0 0;border-top:1px solid var(--line);color:var(--ink2);font-size:13px;list-style:none}
+.legend li{margin-bottom:4px}
+#roomModal{width:min(1080px,94vw);height:88vh;max-height:88vh;padding:0;border:0;border-radius:12px;background:var(--bg);color:var(--ink);overflow:hidden}
+#roomModal[open]{display:flex;flex-direction:column}
+#roomModal::backdrop{background:rgba(8,10,16,.55)}
+#roomModalBody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+#roomModal .x{position:absolute;top:12px;right:12px;z-index:2}
+#roomModal .hero{padding-right:90px}
+#roomModal .back{display:none!important}
+/* terminal */
+#v-terminal.on{display:flex}
+#termList{width:280px;flex:none;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);font-size:14px;padding-bottom:12px}
+#termMain{flex:1;min-width:0;display:flex;flex-direction:column;background:#0E1118;color:#D7DCE6}
+.tbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 14px;border-bottom:1px solid #262C3A;font-size:13.5px}
+.tbar b{font-size:14.5px;margin-right:auto}
+#term{flex:1;overflow-y:auto;padding:12px 14px;font:13px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.tl-i{margin-bottom:9px}
+.tl-i time{color:#6E778C;margin-right:8px}
+.tl-i.think{color:#B8A6E8;font-style:italic}
+.tl-i.hidden{color:#6E778C;font-style:normal}
+.tl-i.cmd .c{color:#7FE0A8;font-weight:600}
+.tl-i.file .c{color:#8FB8F2}
+.tl-i.tool .c{color:#E8C37A}
+.tl-i.you .c{color:#FFFFFF;font-weight:600}
+.tl-i .o{display:block;color:#AEB6C7;margin:3px 0 0 14px;max-height:280px;overflow-y:auto}
+.tl-i.err .o{color:#F2806F}
+.tl-i .sub{color:#6FB7C4;margin-right:6px}
+.tl-i .run{color:#F5B700;margin-left:8px}
+.tbox{border-top:1px solid #262C3A;padding:8px 14px;font:12.5px/1.45 var(--mono);max-height:30%;overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.tbox b{font-family:var(--sans);color:#D7DCE6}
+/* skills */
+.plug{border-top:1px solid var(--line);padding:10px 0}
+.plug header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.plug header b{font-size:15px}
+.plug .btn{margin-left:auto;padding:3px 10px;font-size:13px}
+.plug details{margin-top:4px;font-size:13.5px}
+.plug summary{cursor:pointer;color:var(--ink2)}
+.plug td,.plug th{font-size:13px}
+.plug td:nth-child(2){text-align:left;color:var(--ink2);overflow-wrap:anywhere}
+.ok{color:var(--good);font-weight:600;font-size:13px}
+.joblog{margin-top:12px;background:#0E1118;color:#D7DCE6;border-radius:8px;padding:10px 12px;font:12.5px/1.45 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow-y:auto}
+.skillbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.skillbar input{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--raised);min-width:220px}
+
+@media (max-width:1100px){
+  #v-classroom.on{flex-direction:column;overflow-y:auto}
+  #roomBox{flex:none;height:62.5vw;min-height:320px}
+  #roster,#roomEditor{width:100%;border:0;border-top:1px solid var(--line);overflow:visible}
+}
+@media (max-width:1180px){.columns{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:820px){
+  body{overflow:auto}
+  .top{flex-wrap:wrap;gap:8px 12px}
+  .tally{margin-left:0;width:100%;order:3}
+  .list{width:100%;border-right:0}
+  .keys{display:none}
+  #v-agents.has-detail .list{display:none}
+  #v-agents:not(.has-detail) #detail{display:none}
+  .hero{padding:16px}
+  .columns{padding:4px 16px 32px}
+  .page{padding:16px}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .feed .ev{grid-template-columns:66px minmax(0,1fr)}
+  .feed .ev .k{display:none}
+  .feed .ev .t{grid-column:1/3;white-space:normal}
+  .back{display:inline!important}
+  #v-terminal.on{flex-direction:column;overflow-y:auto}
+  #roomBox{height:400px}
+  #roster,#termList{width:100%;border:0;overflow:visible}
+  #termList{max-height:180px;overflow-y:auto}
+  #termMain{min-height:70vh}
+}
+.back{display:none;margin-bottom:8px;font-weight:600;font-size:14px;color:inherit}
+@media (prefers-reduced-motion:reduce){.hex.working{animation:none}}
+@media (forced-colors:active){.row.needs,.hero.needs{border:2px solid CanvasText}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 20 22" aria-hidden="true"><path d="M10 1l9 5v10l-9 5-9-5V6z"/></svg>Agent Hive</div>
+  <span class="tag warn" id="sampleTag" style="display:none" title="Made-up sessions from ?sample=N. Nothing is sent to the server.">Sample data</span>
+  <nav aria-label="Views">
+    <a href="#/agents" data-nav="agents">Agents</a>
+    <a href="#/classroom" data-nav="classroom">Classroom</a>
+    <a href="#/terminal" data-nav="terminal">Terminal</a>
+    <a href="#/activity" data-nav="activity">Activity</a>
+    <a href="#/usage" data-nav="usage">Usage</a>
+    <a href="#/skills" data-nav="skills">Skills</a>
+    <a href="#/system" data-nav="system">System</a>
+  </nav>
+  <div class="tally" id="tally" aria-live="polite"></div>
+</header>
+<div id="stale" role="alert"></div>
+<main>
+  <div class="view" id="v-agents">
+    <div class="list">
+      <div class="search"><label class="sr" for="q">Search sessions</label><input id="q" type="search" placeholder="Search name, project, branch, or task" autocomplete="off"></div>
+      <div id="rows"></div>
+      <div class="keys"><kbd>j</kbd> <kbd>k</kbd> move, <kbd>/</kbd> search, <kbd>o</kbd> open app, <kbd>f</kbd> show folder</div>
+    </div>
+    <div id="detail"></div>
+  </div>
+  <div class="view" id="v-classroom"><div id="roomBox"><button class="btn" id="editRoom" type="button">Edit room</button><canvas id="roomCanvas" role="img" aria-label="Classroom drawing of your live sessions. The list beside it has the same information."></canvas></div><aside id="roster" aria-label="Sessions in the room"></aside>
+    <aside id="roomEditor" aria-label="Edit the room" hidden>
+      <div class="ed-head"><h2>Edit the room</h2><p class="note">Drag things to move them. Click one to select it. Done saves the room for this page and the Agent Hive app.</p><p class="note warn" id="edNote" hidden></p></div>
+      <p id="edStatus" role="status" aria-live="polite"></p>
+      <section id="edSelected" hidden><h3 id="edSelName"></h3><p class="note" id="edSelHint"></p><div class="ed-row"><button class="btn" id="edRemove" type="button">Remove</button></div></section>
+      <section><h3>Add</h3><p class="note">Drag onto the room, or click to add near the middle.</p><div class="ed-cat" id="edCatalogue" style="margin-top:8px"></div></section>
+      <section><h3>Room</h3>
+        <div class="ed-row"><label>Width <input id="edCols" type="number" min="16" max="48" step="1"></label><label>Depth <input id="edRows" type="number" min="12" max="36" step="1"></label><span class="note">tiles</span></div>
+        <div class="ed-row"><label>Floor <select id="edFloor"><option value="tile">Tiles</option><option value="wood">Wood</option><option value="carpet">Carpet</option></select></label></div>
+        <div class="ed-row"><label>Floor colour <input id="edFloorColor" type="color"></label><button class="btn" id="edFloorTheme" type="button">Use theme</button></div>
+        <div class="ed-row"><label>Wall colour <input id="edWallColor" type="color"></label><button class="btn" id="edWallTheme" type="button">Use theme</button></div>
+      </section>
+      <section class="ed-acts"><button class="btn" id="edUndo" type="button">Undo</button><button class="btn" id="edExport" type="button">Export</button><button class="btn" id="edImport" type="button">Import</button><button class="btn" id="edReset" type="button">Reset to automatic</button><input id="edFile" type="file" accept=".json,application/json" hidden></section>
+      <div class="ed-foot"><button class="btn" id="edCancel" type="button">Cancel</button><button class="btn main" id="edDone" type="button">Done</button></div>
+    </aside></div>
+  <div class="view" id="v-terminal"><div id="termList"></div><div id="termMain"></div></div>
+  <div class="view page" id="v-activity"></div>
+  <div class="view page" id="v-skills"></div>
+  <div class="view page" id="v-usage"></div>
+  <div class="view page" id="v-system"></div>
+</main>
+<dialog id="roomModal" aria-label="Session details"><button class="btn x" data-close-modal>Close</button><div id="roomModalBody"></div></dialog>
+<div id="tip" role="status"></div>
+<div id="toast" role="status"></div>
+
+<script src="/classroom-layout.js"></script>
+<script src="/sample-board.js"></script>
+<script src="/room-path.js"></script>
+<script src="/room-model.js"></script>
+<script src="/room-editor.js"></script>
+<script src="/room.js"></script>
+<script>
+"use strict";
+const VIEWS = ["agents","classroom","terminal","activity","usage","skills","system"];
+const $ = s => document.querySelector(s);
+// ?sample=N swaps the board for N made-up sessions, for checking the Classroom at any size. Off unless the URL asks.
+const SAMPLE = (v => v !== null && /^\d+$/.test(v) ? Math.min(200, +v) : null)(new URLSearchParams(location.search).get("sample"));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const HEX = g => `<svg class="hex ${g}" viewBox="0 0 20 22" aria-hidden="true"><path d="M10 1.5l8.5 4.75v9.5L10 20.5l-8.5-4.75v-9.5z"/></svg>`;
+const GROUP_NAMES = {needs:"Needs you", working:"Working", idle:"Idle", ended:"Not running, used in the last 2 days"};
+const STATE_WORDS = {needs:"Needs you", working:"Working", idle:"Idle", ended:"Not running"};
+
+const ui = {
+  view:"agents", sel:null, board:null, detail:null, q:"",
+  open:new Set(), subOpen:new Set(), subData:{}, showTools:true, feedTools:false,
+  collapsed:load("hive.collapsed", {ended:true}), sigs:{}, replies:{},
+};
+function load(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+function ago(ts){
+  if(!ts) return "";
+  const s = Math.max(0, Date.now()/1000 - ts);
+  return dur(s) + " ago";
+}
+function dur(s){
+  if(s == null) return "";
+  if(s < 60) return Math.round(s) + "s";
+  if(s < 3600) return Math.round(s/60) + "m";
+  if(s < 86400) return Math.floor(s/3600) + "h " + Math.round(s%3600/60) + "m";
+  return Math.floor(s/86400) + "d " + Math.floor(s%86400/3600) + "h";
+}
+function short(s){
+  if(s == null) return "";
+  if(s < 60) return "now";
+  if(s < 3600) return Math.round(s/60) + "m";
+  if(s < 86400) return Math.round(s/3600) + "h";
+  return Math.round(s/86400) + "d";
+}
+const clock = ts => ts ? new Date(ts*1000).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}).replace(" ", " ") : "";
+const stamp = ts => ts ? new Date(ts*1000).toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}) : "";
+function num(n){
+  if(n == null) return "–";
+  const a = Math.abs(n);
+  if(a >= 1e9) return (n/1e9).toFixed(a >= 1e10 ? 0 : 1) + "B";
+  if(a >= 1e6) return (n/1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
+  if(a >= 1e3) return (n/1e3).toFixed(a >= 1e4 ? 0 : 1) + "k";
+  return String(n);
+}
+const modelName = m => String(m || "").replace(/^claude-/, "").replace(/-(\d+)-(\d+)$/, " $1.$2").replace(/-(\d+)$/, " $1").replace(/^./, c => c.toUpperCase());
+
+async function api(path, opts){
+  if(SAMPLE !== null && opts?.method && opts.method !== "GET") throw new Error("This is sample data, so nothing is sent.");
+  const r = await fetch(path, opts);
+  const body = await r.json().catch(() => ({}));
+  if(!r.ok) throw Object.assign(new Error(body.error || r.statusText), {status:r.status});
+  return body;
+}
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = "none", 2400);
+}
+function setIf(el, key, html){
+  if(ui.sigs[key] === html) return false;
+  ui.sigs[key] = html;
+  const top = el.scrollTop;
+  el.innerHTML = html;
+  el.scrollTop = top;
+  return true;
+}
+
+/* ---------- routing ---------- */
+function route(){
+  const [, view, id] = location.hash.match(/^#\/(\w+)(?:\/([\w-]+))?/) || [];
+  ui.view = VIEWS.includes(view) ? view : "agents";
+  if(ui.view === "classroom"){ ui.roomSel = id || null; Room.select(ui.roomSel); if(id) ui.sel = id; }
+  if(ui.view === "terminal") ui.termSel = id || ui.termSel || null;
+  if(ui.view !== "classroom" && typeof RoomEditor === "object" && RoomEditor.isOpen()) RoomEditor.close();
+  Room.setActive(ui.view === "classroom");
+  if(ui.view === "classroom" && typeof loadRoom === "function") loadRoom();
+  ui.sel = ui.view === "agents" ? (id || null) : ui.sel;
+  ui.explicit = !!id;
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + ui.view));
+  document.querySelectorAll("[data-nav]").forEach(a => {
+    if(a.dataset.nav === ui.view) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+  });
+  $("#v-agents").classList.toggle("has-detail", ui.view === "agents" && ui.explicit);
+  ui.detail = ui.detail && ui.detail.id === ui.sel ? ui.detail : null;
+  syncModal();
+  renderList();
+  refresh();
+}
+addEventListener("hashchange", route);
+
+/* ---------- board ---------- */
+function matches(s){
+  if(!ui.q) return true;
+  const hay = [s.name, s.project, s.branch, s.headline, s.worktree, s.model].join(" ").toLowerCase();
+  return ui.q.toLowerCase().split(/\s+/).every(w => hay.includes(w));
+}
+function visible(){
+  return (ui.board?.sessions || []).filter(matches);
+}
+function renderList(){
+  const b = ui.board;
+  if(!b) return;
+  const c = b.counts || {};
+  const needs = c.needs || 0;
+  document.title = (needs ? `(${needs}) ` : "") + "Agent Hive";
+  $("#tally").innerHTML = `<b>${needs}</b> need${needs === 1 ? "s" : ""} you, <b>${c.working||0}</b> working, <b>${c.idle||0}</b> idle`;
+  const list = visible();
+  const parts = [];
+  for(const g of ["needs","working","idle","ended"]){
+    const items = list.filter(s => s.group === g);
+    if(!items.length && (g === "ended" || ui.q)) continue;
+    const closed = !ui.q && ui.collapsed[g];
+    parts.push(`<div class="group"><button data-collapse="${g}" aria-expanded="${!closed}">${esc(GROUP_NAMES[g])} <span class="n">${items.length}</span><span class="chev" aria-hidden="true">${closed ? "▸" : "▾"}</span></button>`);
+    if(!closed){
+      if(!items.length){
+        parts.push(`<div class="empty" style="padding:2px 14px 8px;font-size:13.5px">${g === "needs" ? "Nothing is waiting on you." : g === "working" ? "No session is working right now." : "No idle sessions."}</div>`);
+      }
+      for(const s of items) parts.push(rowHtml(s));
+    }
+    parts.push(`</div>`);
+  }
+  if(!list.length && ui.q) parts.push(`<div class="empty">No session matches “${esc(ui.q)}”. Press Esc to clear the search.</div>`);
+  setIf($("#rows"), "rows", parts.join(""));
+  if(ui.view === "agents" && !ui.sel && list.length && innerWidth > 820){
+    ui.sel = list[0].id;
+    history.replaceState(null, "", "#/agents/" + ui.sel);
+    renderList();
+    refresh();
+  }
+}
+function rowHtml(s){
+  const where = [s.project, s.branch ? "on " + s.branch : "", s.worktree ? "(worktree)" : ""].filter(Boolean).join(" ");
+  const tags = [];
+  if(s.provider === "google") tags.push(`<span class="tag">Google</span>`);
+  if(s.subagents.running) tags.push(`<span class="tag">${s.subagents.running} subagent${s.subagents.running>1?"s":""}</span>`);
+  if(s.plan) tags.push(`<span class="tag">Step ${Math.min(s.plan.done+1, s.plan.total)} of ${s.plan.total}</span>`);
+  if(s.quiet) tags.push(`<span class="tag warn">Quiet ${short(Date.now()/1000 - s.lastTs)}</span>`);
+  const since = s.group === "needs" || s.group === "working" ? s.statusSince : s.lastTs;
+  return `<a class="row ${s.group === "needs" ? "needs" : ""} ${s.id === ui.sel ? "sel" : ""}" href="#/agents/${esc(s.id)}" data-id="${esc(s.id)}" ${s.id === ui.sel ? 'aria-current="true"' : ""}>
+    ${HEX(s.group)}<div class="name">${esc(s.name)}</div><div class="ago" data-since="${since||""}" title="${esc(stamp(since))}">${short(Date.now()/1000 - since)}</div>
+    <div class="where">${esc(where)}</div>
+    <div class="what">${esc(s.headline)}${tags.length ? " " + tags.join(" ") : ""}</div>
+  </a>`;
+}
+$("#rows").addEventListener("click", e => {
+  const b = e.target.closest("[data-collapse]");
+  if(!b) return;
+  const g = b.dataset.collapse;
+  ui.collapsed[g] = !ui.collapsed[g];
+  save("hive.collapsed", ui.collapsed);
+  renderList();
+});
+$("#q").addEventListener("input", e => { ui.q = e.target.value.trim(); renderList(); });
+
+/* ---------- detail ---------- */
+function sinceText(d){
+  const now = Date.now()/1000;
+  if(d.group === "needs" || d.group === "working"){
+    const verb = d.group === "needs" ? "Waiting" : "Working";
+    let t = `${verb} for ${dur(now - d.statusSince)}`;
+    if(d.quiet) t += `. No new activity for ${dur(now - d.lastTs)} and almost no CPU, so it may be stuck`;
+    else if(d.group === "working" && d.lastTs) t += `, last update ${ago(d.lastTs)}`;
+    return t + ".";
+  }
+  if(d.group === "ended") return `Not running. Last active ${ago(d.lastTs)}.`;
+  return d.lastTs ? `Last active ${ago(d.lastTs)}.` : "";
+}
+function syncModal(){
+  const m = $("#roomModal"), want = ui.view === "classroom" && ui.roomSel;
+  if(want && !m.open){
+    if(!ui.detail){ $("#roomModalBody").innerHTML = `<div class="empty">Loading this session…</div>`; }
+    delete ui.sigs.roomModalBody;
+    m.showModal();
+    renderDetail();
+  } else if(!want && m.open) m.close();
+  else if(want && !ui.detail){ $("#roomModalBody").innerHTML = `<div class="empty">Loading this session…</div>`; delete ui.sigs.roomModalBody; }
+}
+$("#roomModal").addEventListener("close", () => { if(ui.view === "classroom" && ui.roomSel) location.hash = "#/classroom"; });
+$("#roomModal").addEventListener("click", e => {
+  if(e.target.closest("[data-close-modal]") || e.target.id === "roomModal") $("#roomModal").close();
+});
+function renderDetail(){
+  const el = ui.view === "classroom" ? $("#roomModalBody") : $("#detail");
+  const sigKey = el.id;
+  const d = ui.detail;
+  if(!d){
+    if(!ui.board?.sessions?.length) setIf(el, sigKey, `<div class="empty">Looking for sessions on this Mac…</div>`);
+    else if(ui.notFound) setIf(el, sigKey, `<div class="empty">${SAMPLE !== null ? "This is a made-up sample session, so it has no details." : "That session is no longer on the board. Pick another from the list."}</div>`);
+    return;
+  }
+  const acts = [];
+  if(d.live && (d.provider === "google" || d.entry === "antigravity")){
+    acts.push(`<button class="btn main" data-act="open">Open in Antigravity</button>`);
+    if(d.webUrl) acts.push(`<a class="btn" href="${esc(d.webUrl)}" target="_blank" rel="noopener noreferrer">Open in browser</a>`);
+  }
+  else if(d.live && d.hostId) acts.push(`<button class="btn main" data-act="open">Open in Claude</button>`);
+  if(d.live) acts.push(`<a class="btn" href="#/terminal/${esc(d.id)}">Watch terminal</a>`);
+  // Only an app that can send replies (capabilities.reply) offers a reply box; otherwise nothing new shows.
+  const canReply = ui.board?.capabilities?.reply && d.canReply;
+  if(ui.board?.capabilities?.reply && !d.canReply && d.replyNote) acts.push(`<span class="replynote">${esc(d.replyNote)}</span>`);
+  if(d.cwd) acts.push(`<button class="btn" data-act="reveal">Show folder</button>`);
+  if(!d.hostId && d.resumeCommand) acts.push(`<button class="btn ${d.live ? "" : "main"}" data-copy="${esc(d.resumeCommand)}">Copy resume command</button>`);
+  for(const p of d.prs.slice(-3).reverse()) acts.push(`<a class="btn" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">PR #${esc(p.number)}</a>`);
+  const where = [d.project, d.branch ? "on " + d.branch : "", d.worktree ? "in worktree " + d.worktree : ""].filter(Boolean).join(" ");
+
+  const left = [];
+  if(d.planItems.length && d.plan){
+    left.push(`<section><h2>Plan <span class="n">${d.plan.done} of ${d.plan.total} done</span></h2><ul class="plan">${d.planItems.map(p => `<li class="${esc(p.state)}">${esc(p.text)}</li>`).join("")}</ul></section>`);
+  }
+  if(d.questions?.length) left.push(`<section><h2>Open questions <span class="n">${d.questions.length}</span></h2><ul class="questions">${d.questions.map(q => `<li>${esc(q)}</li>`).join("")}</ul></section>`);
+  if(d.prompt) left.push(textBlock("Your last request", d.prompt, d.promptTs, "prompt"));
+  if(d.recap) left.push(textBlock("Latest report", d.recap, null, "recap"));
+  else if(d.lastText && d.group !== "working") left.push(textBlock("Latest message", d.lastText, d.lastTextTs, "lastText"));
+  if(d.subagents.running) left.push(subagentsHtml(d));
+  const events = d.events.filter(e => ui.showTools || e.k !== "tool");
+  left.push(`<section><h2>Timeline <span class="n">newest first</span><label class="right toggle"><input type="checkbox" id="toolsToggle" ${ui.showTools ? "checked" : ""}> Show tool calls</label></h2>
+    ${events.length ? `<ol class="tl">${events.map(e => evHtml(e)).join("")}</ol>` : `<div class="note">Nothing recorded yet.</div>`}</section>`);
+  if(d.subagentList.length && !d.subagents.running) left.push(subagentsHtml(d));
+
+  const facts = [];
+  const fact = (k, v) => { if(v !== null && v !== undefined && v !== "") facts.push(`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`); };
+  fact("Folder", d.shortCwd);
+  fact("Model", modelName(d.model));
+  fact("Effort", d.effort);
+  fact("Mode", d.mode);
+  if(d.contextTokens) fact("Context in use", num(d.contextTokens) + " tokens");
+  if(d.tokens) fact("Written, 7 days", num(d.tokens.output) + " tokens");
+  if(d.tokens) fact("Responses, 7 days", d.tokens.responses.toLocaleString());
+  if(d.uptime != null) fact("Open for", dur(d.uptime));
+  if(d.processes) fact("Memory", d.processes.rssMB >= 1024 ? (d.processes.rssMB/1024).toFixed(1) + " GB" : d.processes.rssMB + " MB");
+  if(d.processes) fact("CPU", d.processes.cpu + "%");
+  fact("Transcript", d.transcriptMB + " MB");
+  fact("Process", d.pid);
+  if(d.provider === "google") fact("Platform", "Google Antigravity");
+  else if(d.entry) fact("Platform", d.entry);
+  fact("Version", d.version);
+
+  const side = [`<section><h2>About this session</h2><dl>${facts.join("")}</dl></section>`];
+  if(d.processes?.commands?.length){
+    side.push(`<section><h2>Commands running <span class="n">${d.processes.commands.length}</span></h2>${d.processes.commands.map(p =>
+      `<div class="proc"><code>${esc(p.cmd)}</code><small>${dur(p.uptime)}, ${p.cpu}% CPU</small></div>`).join("")}</section>`);
+  }
+  if(d.prs.length){
+    side.push(`<section><h2>Pull requests <span class="n">${d.prs.length}</span></h2>${d.prs.slice().reverse().map(p =>
+      `<div class="proc"><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.repo)} #${esc(p.number)}</a></div>`).join("")}</section>`);
+  }
+  if(d.formerNames.length) side.push(`<section><h2>Earlier names</h2><div class="note">${esc(d.formerNames.join(", "))}</div></section>`);
+
+  const html = `<div class="hero ${d.group === "needs" ? "needs" : ""}">
+      <a class="back" href="#/agents" data-back>Back to all sessions</a>
+      <div class="who">${HEX(d.group)}<span>${esc(d.name)}</span><span class="where">${esc(where)}</span></div>
+      <h1>${esc(d.headline)}</h1>
+      <div class="since" data-sincetext>${esc(sinceText(d))}</div>
+      <div class="acts">${acts.join("")}</div>
+      ${canReply ? `<form class="reply" data-reply="${esc(d.id)}"><label class="sr" for="${el.id}-reply">Reply to ${esc(d.name)}</label><textarea id="${el.id}-reply" name="reply" rows="2" placeholder="Reply to ${esc(d.name)}">${esc(ui.replies[d.id] || "")}</textarea><button class="btn main" type="submit">Send</button></form>` : ""}
+    </div>
+    <div class="columns"><div>${left.join("")}</div><div class="side">${side.join("")}</div></div>`;
+  // A refresh can redraw the details while you type a reply; keep the cursor where it was.
+  const box = el.querySelector("textarea[name=reply]"), caret = box && document.activeElement === box ? [box.selectionStart, box.selectionEnd] : null;
+  if(setIf(el, sigKey, html) && caret){ const n = el.querySelector("textarea[name=reply]"); if(n){ n.focus(); n.setSelectionRange(...caret); } }
+}
+function textBlock(title, text, ts, key){
+  const long = text.length > 420 || text.split("\n").length > 5;
+  const open = ui.open.has("block:" + key + ":" + text.length);
+  return `<section><h2>${esc(title)}${ts ? ` <span class="n" title="${esc(stamp(ts))}">${esc(clock(ts))}</span>` : ""}</h2>
+    <p class="quote ${long && !open ? "clamp" : ""}">${esc(text)}</p>
+    ${long ? `<button class="linkish" data-toggle="block:${esc(key)}:${text.length}">${open ? "Show less" : "Show all"}</button>` : ""}</section>`;
+}
+function subagentsHtml(d){
+  const run = d.subagents.running;
+  const label = {running:"Running", done:"Done", stalled:"No update"};
+  const showAll = ui.open.has("allsubs:" + d.id);
+  const running = d.subagentList.filter(a => a.state === "running");
+  const rest = d.subagentList.filter(a => a.state !== "running");
+  const list = showAll ? d.subagentList : running.concat(rest.slice(0, Math.max(0, 5 - running.length)));
+  const items = list.map(a => {
+    const open = ui.subOpen.has(a.id);
+    const data = ui.subData[a.id];
+    let inner = "";
+    if(open){
+      inner = `<div class="inner">${!data ? "Loading…" : `
+        ${data.brief ? `<pre>${esc(data.brief)}</pre>` : ""}
+        ${data.events?.length ? `<ol class="tl">${data.events.slice(0,20).map(e => evHtml(e, "sub")).join("")}</ol>` : `<div class="note">No activity recorded.</div>`}`}</div>`;
+    }
+    return `<div class="sub ${esc(a.state)}"><button data-sub="${esc(a.id)}" aria-expanded="${open}">
+        <span class="st">${label[a.state]}</span>
+        <span class="desc">${esc(a.description || a.type)}<small>${esc(a.last || a.type)}</small></span>
+        <span class="when" title="${esc(stamp(a.lastTs))}">${short(Date.now()/1000 - a.lastTs)}</span>
+      </button>${inner}</div>`;
+  }).join("");
+  const hidden = d.subagentList.length - list.length;
+  const toggle = hidden > 0 || showAll && d.subagentList.length > 5
+    ? `<p style="margin:8px 0 0"><button class="linkish" data-toggle="allsubs:${esc(d.id)}">${showAll ? "Show fewer" : `Show ${hidden} more`}</button></p>` : "";
+  const more = d.subagents.total > d.subagentList.length ? `, latest ${d.subagentList.length} available` : "";
+  return `<section><h2>Subagents <span class="n">${run ? run + " running, " : ""}${d.subagents.total} total${more}</span></h2>${items}${toggle}</section>`;
+}
+const KIND = {you:"You", say:"Claude", tool:"Tool", event:"Update", recap:"Report"};
+function evHtml(e, scope){
+  const id = (scope || "") + e.id;
+  const hasMore = e.body && (e.body !== e.title) || e.out;
+  const open = ui.open.has(id);
+  const cls = `ev ${esc(e.k)} ${e.err ? "err" : ""}`;
+  let kind = e.err ? "Failed" : KIND[e.k] || e.k;
+  if(e.k === "say" && !e.err && (ui.detail?.provider === "google" || ui.detail?.entry === "antigravity")){
+    kind = "Google";
+  }
+  const title = hasMore
+    ? `<button class="t" data-toggle="${esc(id)}" aria-expanded="${open}">${esc(e.title)}</button>`
+    : `<div class="t">${esc(e.title)}</div>`;
+  let more = "";
+  if(open && hasMore){
+    const body = e.body && e.body !== e.title
+      ? (e.k === "tool" || e.k === "event" ? `<pre>${esc(e.body)}</pre>` : `<div class="say-body">${esc(e.body)}</div>`) : "";
+    const out = e.out ? `<pre>${esc(e.out)}</pre>` : "";
+    more = `<div class="more">${body}${out}</div>`;
+  }
+  return `<li class="${cls}"><time title="${esc(stamp(e.t))}">${esc(clock(e.t))}</time><span class="k">${esc(kind)}</span>${title}${more}</li>`;
+}
+const onDetailClick = async e => {
+  const t = e.target.closest("[data-toggle]");
+  if(t){
+    const id = t.dataset.toggle;
+    ui.open.has(id) ? ui.open.delete(id) : ui.open.add(id);
+    renderDetail();
+    return;
+  }
+  const s = e.target.closest("[data-sub]");
+  if(s){
+    const id = s.dataset.sub;
+    if(ui.subOpen.has(id)){ ui.subOpen.delete(id); renderDetail(); return; }
+    ui.subOpen.add(id);
+    renderDetail();
+    try { ui.subData[id] = await api(`/api/session/${ui.sel}/agent/${id}`); }
+    catch(err){ ui.subData[id] = {events:[], brief:"Couldn't load this subagent: " + err.message}; }
+    renderDetail();
+    return;
+  }
+  const a = e.target.closest("[data-act]");
+  if(a) return act(a.dataset.act);
+  const c = e.target.closest("[data-copy]");
+  if(c){
+    try { await navigator.clipboard.writeText(c.dataset.copy); toast("Copied the resume command."); }
+    catch { toast("Your browser blocked copying."); }
+  }
+};
+const onDetailChange = e => {
+  if(e.target.id === "toolsToggle"){ ui.showTools = e.target.checked; renderDetail(); }
+};
+// Replies: the text is sent as typed, and stays in the box until the app says it was sent.
+const onReplySubmit = async e => {
+  const f = e.target.closest("form[data-reply]");
+  if(!f) return;
+  e.preventDefault();
+  const id = f.dataset.reply, text = f.querySelector("textarea").value, btn = f.querySelector("button");
+  if(!text.trim() || btn.disabled) return;
+  btn.disabled = true;
+  try {
+    const r = await api("/api/reply", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sessionId:id, text})});
+    delete ui.replies[id];
+    document.querySelectorAll(`form[data-reply="${CSS.escape(id)}"] textarea`).forEach(t => { t.value = ""; });
+    toast(r.message || "Sent.");
+  } catch(err){ toast("Couldn't send the reply: " + err.message); }
+  finally { document.querySelectorAll(`form[data-reply="${CSS.escape(id)}"] button`).forEach(b => { b.disabled = false; }); }
+};
+for(const el of [$("#detail"), $("#roomModalBody")]){
+  el.addEventListener("click", onDetailClick);
+  el.addEventListener("change", onDetailChange);
+  el.addEventListener("submit", onReplySubmit);
+  el.addEventListener("input", e => { const f = e.target.closest("form[data-reply]"); if(f) ui.replies[f.dataset.reply] = e.target.value; });
+  el.addEventListener("keydown", e => { if(e.key === "Enter" && (e.metaKey || e.ctrlKey) && e.target.name === "reply") e.target.form.requestSubmit(); });
+}
+async function act(action, id = ui.sel){
+  if(!id) return;
+  try {
+    const r = await api("/api/action", {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action, sessionId:id})});
+    toast(r.message);
+  } catch(err){ toast(err.message); }
+}
+
+/* ---------- activity ---------- */
+function renderActivity(items){
+  const shown = items.filter(e => ui.feedTools || e.k !== "tool");
+  const rows = shown.slice(0,150).map(e => {
+    let kLabel = e.err ? "Failed" : KIND[e.k] || e.k;
+    if(e.k === "say" && !e.err){
+      const s = ui.board?.sessions?.find(s => s.id === e.sid);
+      if(s && (s.provider === "google" || s.entry === "antigravity")) kLabel = "Google";
+    }
+    return `<li class="ev ${esc(e.k)} ${e.err ? "err" : ""}">
+      <time title="${esc(stamp(e.t))}">${esc(clock(e.t))}</time><span class="k">${esc(kLabel)}</span>
+      <a class="sess" href="#/agents/${esc(e.sid)}" title="${esc(e.name)}">${esc(e.name)}</a><div class="t" title="${esc(e.title)}">${esc(e.title)}</div></li>`;
+  }).join("");
+  setIf($("#v-activity"), "activity", `<div class="wrap"><h1>What your agents have been saying</h1>
+    <p class="lead">Your requests, Claude's replies, and reports across every session, newest first.</p>
+    <div class="filter"><label class="toggle"><input type="checkbox" id="feedTools" ${ui.feedTools ? "checked" : ""}> Show tool calls</label></div>
+    <section class="feed">${rows ? `<ol class="tl">${rows}</ol>` : `<div class="empty">No recent activity.</div>`}</section></div>`);
+}
+$("#v-activity").addEventListener("change", e => { if(e.target.id === "feedTools"){ ui.feedTools = e.target.checked; renderActivity(ui.feed || []); } });
+
+/* ---------- usage ---------- */
+function renderUsage(u){
+  const today = u.days[u.days.length-1];
+  const max = Math.max(1, ...u.days.map(d => d.output));
+  const peak = u.days.reduce((a,b) => b.output > a.output ? b : a, u.days[0]);
+  const total = u.days.reduce((a,d) => a + d.output, 0);
+  const bars = u.days.map(d => {
+    const label = d === today || d === peak;
+    return `<div class="day" tabindex="0" data-tip="${esc(JSON.stringify(d))}" aria-label="${esc(d.day)}: ${num(d.output)} tokens written">
+      ${label && d.output ? `<div class="val">${num(d.output)}</div>` : ""}<div class="bar" style="height:${Math.round(d.output/max*82)}%"></div></div>`;
+  }).join("");
+  const labels = u.days.map(d => `<span class="${d === today ? "now" : ""}">${d === today ? "Today" : new Date(d.day+"T12:00").toLocaleDateString([], {weekday:"short"})}</span>`).join("");
+  const scanning = !u.ready ? `<p class="note">Still counting transcripts: ${u.filesDone} of ${u.filesTotal} files read. These numbers will grow until that finishes.</p>` : "";
+  const projectRows = u.projects.slice(0,14).map(p => `<tr><td>${esc(p.name)}</td><td>${num(p.today)}</td><td>${num(p.output)}</td><td>${p.responses.toLocaleString()}</td></tr>`).join("");
+  const modelRows = u.models.map(m => `<tr><td>${esc(modelName(m.name))}</td><td>${num(m.output)}</td><td>${num(m.input + m.cacheWrite)}</td><td>${num(m.cacheRead)}</td></tr>`).join("");
+  const sessionRows = u.sessions.map(s => `<tr><td><a href="#/agents/${esc(s.id)}">${esc(s.name)}</a></td><td>${num(s.output)}</td><td>${s.responses.toLocaleString()}</td></tr>`).join("");
+  setIf($("#v-usage"), "usage", `<div class="wrap">
+    <h1>${num(today.output)} tokens written today, ${num(total)} this week</h1>
+    <p class="lead">Across ${today.responses.toLocaleString()} Claude Code responses today, including subagents.</p>
+    ${scanning}
+    <div class="chart">${bars}</div><div class="days" aria-hidden="true">${labels}</div>
+    <div class="two">
+      <section><h2>By project</h2><table><thead><tr><th>Project</th><th>Today</th><th>7 days</th><th>Responses</th></tr></thead><tbody>${projectRows || `<tr><td colspan="4">No usage counted yet.</td></tr>`}</tbody></table></section>
+      <div>
+        <section><h2>By model, 7 days</h2><table><thead><tr><th>Model</th><th>Written</th><th>Read new</th><th>Read from cache</th></tr></thead><tbody>${modelRows}</tbody></table></section>
+        <section><h2>Busiest sessions, 7 days</h2><table><thead><tr><th>Session</th><th>Written</th><th>Responses</th></tr></thead><tbody>${sessionRows}</tbody></table></section>
+      </div>
+    </div>
+    <section><p class="note">“Written” is output tokens. “Read new” is input Claude hadn't seen; “read from cache” is context it reused, usually far cheaper. Only Claude Code is counted here, because other tools don't record tokens on this Mac. Your plan's remaining quota isn't stored in these files, so it isn't shown.</p></section>
+  </div>`);
+}
+$("#v-usage").addEventListener("mouseover", showTip);
+$("#v-usage").addEventListener("focusin", showTip);
+$("#v-usage").addEventListener("mouseout", () => $("#tip").style.display = "none");
+$("#v-usage").addEventListener("focusout", () => $("#tip").style.display = "none");
+function showTip(e){
+  const el = e.target.closest("[data-tip]");
+  if(!el) return;
+  const d = JSON.parse(el.dataset.tip);
+  const tip = $("#tip");
+  tip.innerHTML = `<b>${esc(new Date(d.day+"T12:00").toLocaleDateString([], {weekday:"long", month:"short", day:"numeric"}))}</b><br>${num(d.output)} tokens written<br>${d.responses.toLocaleString()} responses<br>${num(d.input + d.cacheWrite)} read new, ${num(d.cacheRead)} from cache`;
+  tip.style.display = "block";
+  const r = el.getBoundingClientRect();
+  tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, Math.max(8, r.left + r.width/2 - tip.offsetWidth/2)) + "px";
+  tip.style.top = Math.max(8, r.top + 30) + "px";
+}
+
+/* ---------- system ---------- */
+function renderSystem(s){
+  const o = s.openclaw;
+  const apps = s.apps.map(a => `<tr><td>${esc(a.name)}</td><td>${dur(a.uptime)}</td><td>${a.rssMB >= 1024 ? (a.rssMB/1024).toFixed(1)+" GB" : a.rssMB+" MB"}</td><td>${a.cpu}%</td></tr>`).join("");
+  const parts = [`<div class="wrap"><h1>Everything else running</h1>
+    <p class="lead">Agent apps outside Claude Code sessions, and OpenClaw's automations.</p>
+    <section><h2>Agent apps <span class="n">${s.apps.length}</span></h2>${apps ? `<table><thead><tr><th>App</th><th>Running for</th><th>Memory</th><th>CPU</th></tr></thead><tbody>${apps}</tbody></table>` : `<div class="note">No other agent apps are running.</div>`}</section>`];
+  if(s.openclawError) parts.push(`<section><h2>OpenClaw</h2><div class="note">Couldn't read OpenClaw's database: ${esc(s.openclawError)}</div></section>`);
+  if(o){
+    const running = o.running.map(r => `<tr><td>${esc(r.label)}${r.progress ? `<br><small>${esc(r.progress)}</small>` : ""}</td><td>${esc(r.status)}</td><td>${esc(r.lastTool || "")}</td><td>${r.startedAt ? esc(ago(r.startedAt)) : ""}</td></tr>`).join("");
+    const routines = o.routines.map(r => `<tr><td>${esc(r.name)}</td><td>${r.count.toLocaleString()}</td><td>${r.failed || 0}</td><td>${r.last ? esc(ago(r.last)) : ""}</td></tr>`).join("");
+    const sched = o.schedules.map(j => `<tr><td>${esc(j.name)}</td><td>${j.enabled ? "On" : "Off"}</td><td>${j.enabled && j.next ? esc(stamp(j.next)) : ""}</td><td>${j.last ? esc(j.lastStatus || "") + ", " + esc(ago(j.last)) : "Never"}</td></tr>`).join("");
+    const problems = o.problems.map(p => `<tr><td>${esc(p.label)}${p.why ? `<br><small>${esc(p.why)}</small>` : ""}</td><td>${esc(p.status === "timed_out" ? "Timed out" : "Failed")}</td><td>${p.at ? esc(ago(p.at)) : ""}</td></tr>`).join("");
+    parts.push(`<section><h2>OpenClaw tasks running now <span class="n">${o.running.length}</span></h2>${running ? `<table><thead><tr><th>Task</th><th>Status</th><th>Last tool</th><th>Started</th></tr></thead><tbody>${running}</tbody></table>` : `<div class="note">No OpenClaw task is running.</div>`}</section>`);
+    if(problems) parts.push(`<section><h2>OpenClaw problems, 7 days <span class="n">${o.problems.length}</span></h2><table><thead><tr><th>Task</th><th>Result</th><th>When</th></tr></thead><tbody>${problems}</tbody></table></section>`);
+    parts.push(`<div class="two"><section><h2>OpenClaw runs, 24 hours</h2><table><thead><tr><th>Automation</th><th>Runs</th><th>Failed</th><th>Last</th></tr></thead><tbody>${routines || `<tr><td colspan="4">No runs.</td></tr>`}</tbody></table></section>
+      <section><h2>OpenClaw schedules</h2><table><thead><tr><th>Job</th><th>State</th><th>Next run</th><th>Last run</th></tr></thead><tbody>${sched || `<tr><td colspan="4">No schedules.</td></tr>`}</tbody></table></section></div>`);
+  }
+  parts.push("</div>");
+  setIf($("#v-system"), "system", parts.join(""));
+}
+
+/* ---------- classroom ---------- */
+function macHtml(m){
+  if(!m) return "";
+  const size = mb => mb >= 1024 ? (mb/1024).toFixed(1) + " GB" : mb + " MB";
+  return `<div class="macnow"><h3>On this Mac right now</h3><div><span>Load ${esc(m.load)} on ${esc(m.cores)} cores</span><span>${m.load > m.cores*2 ? "Very busy" : m.load > m.cores ? "Busy" : "Normal"}</span></div>
+    ${m.top.map(a => `<div><span>${esc(a.name)}</span><span>${esc(a.cpu)}% CPU, ${esc(size(a.rssMB))}</span></div>`).join("")}</div>`;
+}
+const PROJECT_COLORS = ["#4C6FD6","#C9562F","#17948A","#8A5CD1","#D0457F","#5B9A38","#2E8BC7","#5A6680"];
+const colorOf = p => { let h = 7; for(const c of String(p)) h = (h*31 + c.charCodeAt(0)) >>> 0; return PROJECT_COLORS[h % PROJECT_COLORS.length]; };
+function renderRoster(){
+  const live = (ui.board?.sessions || []).filter(s => s.live && s.group !== "ended");
+  const parts = [];
+  if(!live.length) parts.push(`<div class="empty">${ui.board?.ready ? "No sessions are open, so the room is empty." : "Taking attendance…"}</div>`);
+  for(const g of ["needs","working","idle"]){
+    const items = live.filter(s => s.group === g);
+    if(!items.length) continue;
+    parts.push(`<h3>${esc(GROUP_NAMES[g])} (${items.length})</h3>`);
+    for(const s of items){
+      const since = g === "idle" ? s.lastTs : s.statusSince;
+      parts.push(`<a class="rc ${s.id === ui.roomSel ? "sel" : ""}" href="#/classroom/${esc(s.id)}" data-room-id="${esc(s.id)}"><span class="sw" style="background:${colorOf(s.project)}"></span><span class="nm">${esc(s.name)}</span><span class="st" data-since="${since||""}">${short(Date.now()/1000 - since)}</span>${g === "idle" ? "" : `<span class="what">${esc(s.quiet ? "Gone quiet. " + s.headline : s.headline)}</span>`}</a>`);
+      for(const a of s.helpers || []){
+        parts.push(`<a class="rc subrow" href="#/classroom/${esc(s.id)}" data-room-id="sub:${esc(a.id)}"><span class="sw" style="background:${colorOf(s.project)}"></span><span class="nm">${esc(a.description)}</span><span class="st">${esc(a.type)}</span>${a.task ? `<span class="what">${esc(a.task)}</span>` : ""}</a>`);
+      }
+    }
+  }
+  parts.push(macHtml(ui.board?.mac));
+  parts.push(`<ul class="legend"><li><b>Hand up at the front:</b> waiting on you.</li><li><b>At a desk:</b> writing or thinking.</li><li><b>Shelf, globe, machine:</b> reading files, on the web, running a command.</li><li><b>Strolling:</b> idle. <b>Asleep:</b> idle for over 6 hours.</li><li><b>Small characters:</b> subagents, in the color of the session that started them. Click one to open that session.</li></ul>`);
+  setIf($("#roster"), "roster", parts.join(""));
+}
+$("#roster").addEventListener("mouseover", e => Room.highlight(e.target.closest("[data-room-id]")?.dataset.roomId || null));
+if(SAMPLE !== null) $("#sampleTag").style.display = "";
+Room.init($("#roomCanvas"), id => { location.hash = id ? "#/classroom/" + id : "#/classroom"; });
+// The saved classroom arrangement, shared with the Mac app, or null for the automatic room. Read on load and on
+// opening the Classroom; the room is only rebuilt when the file has changed.
+async function loadRoom(){
+  if(RoomEditor.isOpen()) return;
+  let room;
+  try { room = (await api("/api/classroom")).room; } catch { return; }
+  const text = JSON.stringify(room ?? null);
+  if(text !== ui.roomText){ ui.roomText = text; Room.setRoom(room); }
+}
+loadRoom();
+// Edit mode. Not in sample mode, which never saves. Switching views or reloading drops the draft.
+async function saveRoom(room){
+  try { await api("/api/classroom", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({room})}); }
+  catch(err){ return "The room wasn't saved: " + err.message; }
+  ui.roomText = JSON.stringify(room);
+  Room.setRoom(room);
+  return null;
+}
+$("#editRoom").hidden = SAMPLE !== null;
+$("#editRoom").addEventListener("click", () => {
+  if(SAMPLE !== null || RoomEditor.isOpen()) return;
+  $("#roster").hidden = true; $("#roomEditor").hidden = false; $("#editRoom").hidden = true;
+  RoomEditor.open({room:Room.room(), problem:Room.problem(), canvas:$("#roomCanvas"), toast,
+    save:room => saveRoom(room), reset:() => saveRoom(null),
+    exit:() => { $("#roster").hidden = false; $("#roomEditor").hidden = true; $("#editRoom").hidden = SAMPLE !== null; }});
+});
+
+/* ---------- terminal ---------- */
+ui.termShow = {think:true, cmd:true, file:true, tool:true, say:true, you:true};
+ui.termFollow = true;
+const TERM_FILTERS = [["think","Thinking"],["cmd","Commands"],["file","Files"],["tool","Other tools"],["say","Messages"]];
+function termItem(e){
+  const sub = e.sub ? `<span class="sub">[${esc(e.sub)}]</span>` : "";
+  const time = `<time>${esc(clock(e.t))}</time>`;
+  const out = e.out ? `<span class="o">${esc(e.out)}</span>` : "";
+  const body = e.body ? `<span class="o">${esc(e.body)}</span>` : "";
+  const run = e.open ? `<span class="run">running</span>` : "";
+  if(e.k === "think") return `<div class="tl-i think">${time}${sub}${esc(e.text)}</div>`;
+  if(e.k === "cmd") return `<div class="tl-i cmd ${e.err ? "err" : ""}">${time}${sub}${e.note ? `<span style="color:#6E778C"># ${esc(e.note)}</span>\n` : ""}<span class="c">$ ${esc(e.text)}</span>${run}${out}</div>`;
+  if(e.k === "file" || e.k === "tool") return `<div class="tl-i ${e.k} ${e.err ? "err" : ""}">${time}${sub}<span class="c">${esc(e.text)}</span>${run}${body}${e.quiet ? "" : out}</div>`;
+  if(e.k === "you") return `<div class="tl-i you">${time}<span class="c">You: ${esc(e.text)}</span></div>`;
+  return `<div class="tl-i say">${time}${sub}${esc(e.text)}</div>`;
+}
+function renderTermList(){
+  const list = (ui.board?.sessions || []).filter(s => s.group !== "ended");
+  if(!ui.termSel && list.length){ ui.termSel = (list.find(s => s.group === "working") || list[0]).id; }
+  const rows = list.map(s => `<a class="rc ${s.id === ui.termSel ? "sel" : ""}" href="#/terminal/${esc(s.id)}">${HEX(s.group)}<span class="nm">${esc(s.name)}</span><span class="st">${esc(STATE_WORDS[s.group])}</span></a>`).join("");
+  setIf($("#termList"), "termList", rows || `<div class="empty">No sessions are open.</div>`);
+}
+function renderTerm(){
+  const d = ui.term, main = $("#termMain");
+  if(!d){ setIf(main, "termMain", `<div class="empty" style="color:inherit">Pick a session to watch.</div>`); ui.termBuilt = false; return; }
+  if(!ui.termBuilt){
+    main.innerHTML = `<div class="tbar"><b id="tname"></b>${TERM_FILTERS.map(([k,l]) => `<label class="toggle"><input type="checkbox" data-tf="${k}" ${ui.termShow[k] ? "checked" : ""}> ${l}</label>`).join("")}<label class="toggle"><input type="checkbox" id="tfollow" ${ui.termFollow ? "checked" : ""}> Follow</label></div><div id="term" aria-live="off"></div><div class="tbox" id="tbox"></div>`;
+    ui.termBuilt = true; ui.sigs.term = null; ui.sigs.tbox = null;
+    delete ui.sigs.termMain;
+  }
+  $("#tname").textContent = d.name + ": " + d.headline;
+  const out = [];
+  let hidden = 0;
+  const flush = () => { if(hidden){ out.push(`<div class="tl-i think hidden">Thinking: ${hidden > 1 ? hidden + " blocks" : "1 block"}, text not saved to the transcript</div>`); hidden = 0; } };
+  for(const e of d.items){
+    if(!ui.termShow[e.k]) continue;
+    if(e.k === "think" && e.hidden){ hidden++; continue; }
+    flush(); out.push(termItem(e));
+  }
+  flush();
+  const term = $("#term");
+  if(setIf(term, "term", out.join("") || "Nothing recorded yet.") && ui.termFollow) term.scrollTop = term.scrollHeight;
+  const box = [];
+  if(d.commands.length) box.push(`<b>Running now</b>\n` + d.commands.map(c => esc(`${c.cmd}  (${dur(c.uptime)}, ${c.cpu}% CPU)`)).join("\n"));
+  for(const t of d.tasks) box.push(`<b>Background output ${esc(t.id)}, updated ${esc(ago(t.mtime))}</b>\n${esc(t.tail)}`);
+  const tb = $("#tbox"); tb.style.display = box.length ? "block" : "none";
+  setIf(tb, "tbox", box.join("\n\n"));
+}
+$("#termMain").addEventListener("change", e => {
+  if(e.target.dataset.tf){ ui.termShow[e.target.dataset.tf] = e.target.checked; renderTerm(); }
+  if(e.target.id === "tfollow"){ ui.termFollow = e.target.checked; if(ui.termFollow){ const t = $("#term"); t.scrollTop = t.scrollHeight; } }
+});
+
+/* ---------- skills ---------- */
+ui.skillQ = "";
+function skillRows(list){
+  return `<table><thead><tr><th>Skill</th><th style="text-align:left">What it does</th><th>Version</th></tr></thead><tbody>${list.map(s =>
+    `<tr><td>${esc(s.name)}${s.origin ? `<br><small>from ${esc(s.origin)}</small>` : ""}</td><td>${esc(s.description)}</td><td>${esc(s.version || "")}</td></tr>`).join("")}</tbody></table>`;
+}
+function renderSkills(d){
+  ui.skills = d;
+  const q = ui.skillQ.toLowerCase();
+  const hit = s => !q || (s.name + " " + s.description).toLowerCase().includes(q);
+  const busy = d.job.running;
+  const group = g => {
+    const items = g.skills.filter(hit);
+    if(q && !items.length && !g.title.toLowerCase().includes(q)) return "";
+    const status = g.kind !== "plugin" ? "" : g.status === "update" ? `<span class="tag warn">${esc(g.latest)} available</span>`
+      : g.status === "current" ? `<span class="ok">Up to date</span>` : `<span class="tag">Latest version unknown</span>`;
+    const btn = g.kind === "plugin" ? `<button class="btn" data-skill="update" data-plugin="${esc(g.key)}" ${busy ? "disabled" : ""}>Update</button>` : "";
+    const when = g.updatedAt ? `<span class="note">updated ${esc(stamp(g.updatedAt))}</span>` : "";
+    return `<div class="plug"><header><b>${esc(g.title)}</b>${g.version ? `<span class="tag">${esc(g.version)}</span>` : `<span class="tag">No version</span>`}${status}${g.enabled === false ? `<span class="tag">Off</span>` : ""}${when}${btn}</header>
+      ${g.note ? `<div class="note">${esc(g.note)}</div>` : ""}
+      ${items.length ? `<details ${q ? "open" : ""}><summary>${items.length} skill${items.length === 1 ? "" : "s"}</summary>${skillRows(items)}</details>` : `<div class="note">No skills in this one.</div>`}</div>`;
+  };
+  const behind = d.plugins.filter(p => p.status === "update").length;
+  const job = d.job.label ? `<div class="note" style="margin-top:12px">${esc(d.job.label)}${d.job.running ? "…" : d.job.ok ? ": finished." : ": finished with problems."}${!d.job.running && d.job.ok && d.job.label.startsWith("Updating") ? " Restart running sessions to pick up new versions." : ""}</div><div class="joblog" id="joblog">${esc(d.job.log.join("\n"))}</div>` : "";
+  const html = `<h1>${d.total} skills${behind ? `, ${behind} plugin${behind === 1 ? "" : "s"} can update` : ""}</h1>
+    <p class="lead">Plugins carry real version numbers. Most other skills don't record one, so those show "No version". Checked against your local marketplace copies, last refreshed ${esc(stamp(d.marketplacesAt))}.</p>
+    <div class="skillbar"><button class="btn" data-skill="check" ${busy ? "disabled" : ""}>Check for updates</button><button class="btn main" data-skill="update-all" ${busy ? "disabled" : ""}>Update all</button></div>
+    ${job}
+    <section><h2>Claude Code plugins <span class="n">${d.plugins.length}</span></h2>${d.plugins.map(group).join("")}</section>
+    <section><h2>From your Claude account <span class="n">${d.synced.length}</span></h2><p class="note">Claude keeps these up to date itself, so they have no update button.</p>${d.synced.map(group).join("")}</section>
+    <section><h2>Skill folders <span class="n">${d.folders.length}</span></h2>${d.folders.map(group).join("")}</section>`;
+  if(!document.querySelector("#skillQ")){
+    $("#v-skills").innerHTML = `<div class="wrap"><label class="sr" for="skillQ">Search skills</label><input id="skillQ" type="search" placeholder="Search skills" style="display:block;margin-bottom:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--raised);width:min(100%,280px)"><div id="skillBody"></div></div>`;
+    $("#skillQ").addEventListener("input", e => { ui.skillQ = e.target.value.trim(); renderSkills(ui.skills); });
+  }
+  const openSet = new Set([...document.querySelectorAll("#skillBody details[open]")].map(x => x.closest(".plug").querySelector("b").textContent));
+  if(setIf($("#skillBody"), "skills", html)){
+    document.querySelectorAll("#skillBody .plug").forEach(p => { if(openSet.has(p.querySelector("b").textContent)) p.querySelector("details")?.setAttribute("open",""); });
+    const log = $("#joblog"); if(log) log.scrollTop = log.scrollHeight;
+  }
+}
+$("#v-skills").addEventListener("click", async e => {
+  const b = e.target.closest("[data-skill]");
+  if(!b) return;
+  const action = b.dataset.skill;
+  if(action === "update-all" && !confirm("Update every Claude Code plugin and any skills installed from ClawHub? Running sessions keep the old version until they restart.")) return;
+  try {
+    const r = await api("/api/skills/run", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action, plugin:b.dataset.plugin})});
+    toast(r.message);
+    renderSkills(await api("/api/skills"));
+  } catch(err){ toast(err.message); }
+});
+
+/* ---------- refresh ---------- */
+function staleText(age, load, cores){
+  const busy = load > (cores || 8) * 2;
+  if(busy && age < 600) return `Updates are delayed. The data is ${dur(age)} old because this Mac is very busy (load ${Math.round(load)} on ${cores} cores). It catches up by itself.`;
+  if(busy) return `The data is ${dur(age)} old, and this Mac is very busy (load ${Math.round(load)} on ${cores} cores). If it doesn't catch up, run ./hive.sh restart and check server.log.`;
+  return `The data is ${dur(age)} old, but this Mac isn't very busy, so the refresh may have stopped. Run ./hive.sh restart and check server.log.`;
+}
+let failing = 0, lastFetch = {};
+function due(k, ms){ const n = Date.now(); if(n - (lastFetch[k]||0) < ms) return false; lastFetch[k] = n; return true; }
+async function refresh(force){
+  if(document.hidden && !force) return;
+  try {
+    ui.board = await api("/api/board");
+    if(ui.pageVersion && ui.board.page && ui.board.page !== ui.pageVersion) return location.reload();
+    ui.pageVersion = ui.board.page || ui.pageVersion;
+    if(SAMPLE !== null) ui.board = {...ui.board, ...SampleBoard.make(SAMPLE, 1, Math.floor(Date.now()/1000))};
+    failing = 0;
+    const age = Date.now()/1000 - ui.board.generatedAt;
+    const stale = $("#stale");
+    stale.style.display = age > 20 && ui.board.ready ? "block" : "none";
+    if(age > 20) stale.textContent = staleText(age, ui.board.loadNow, ui.board.cores);
+    renderList();
+    if(ui.view === "classroom"){ Room.update(ui.board); renderRoster(); }
+    if((ui.view === "agents" || ui.view === "classroom" && ui.roomSel) && ui.sel && ui.board.ready){
+      const want = ui.sel;
+      if(SAMPLE !== null){ ui.detail = null; ui.notFound = true; renderDetail(); return; }
+      try {
+        const d = await api("/api/session/" + encodeURIComponent(want));
+        if(ui.sel === want){ ui.detail = d; ui.notFound = false; renderDetail(); }
+      } catch(err){
+        if(err.status === 404 && ui.sel === want){ ui.detail = null; ui.notFound = true; renderDetail(); }
+      }
+    } else if(ui.view === "terminal"){
+      renderTermList();
+      if(ui.termSel && ui.board.ready){
+        const want = ui.termSel;
+        try {
+          const d = await api("/api/session/" + encodeURIComponent(want) + "/live");
+          if(ui.termSel === want){ ui.term = d; renderTerm(); }
+        } catch(err){ if(err.status === 404){ ui.term = null; renderTerm(); } }
+      }
+    } else if(ui.view === "skills"){
+      renderSkills(await api("/api/skills"));
+    } else if(ui.view === "activity"){
+      ui.feed = (await api("/api/activity")).items;
+      renderActivity(ui.feed);
+    } else if(ui.view === "usage" && (due("usage", 8000) || !ui.sigs.usage)){
+      renderUsage(await api("/api/usage"));
+    } else if(ui.view === "system" && (due("system", 8000) || !ui.sigs.system)){
+      renderSystem(await api("/api/system"));
+    }
+  } catch(err){
+    if(++failing >= 2){
+      const stale = $("#stale");
+      stale.style.display = "block";
+      stale.textContent = "Can't reach the Agent Hive server. Run ./hive.sh restart in the agent-dashboard folder, and this page will reconnect by itself.";
+    }
+  }
+}
+setInterval(refresh, 2500);
+document.addEventListener("visibilitychange", () => { if(!document.hidden) refresh(true); });
+setInterval(() => {
+  document.querySelectorAll("[data-since]").forEach(el => {
+    const v = +el.dataset.since;
+    if(v) el.textContent = short(Date.now()/1000 - v);
+  });
+  const st = document.querySelector("[data-sincetext]");
+  if(st && ui.detail) st.textContent = sinceText(ui.detail);
+}, 5000);
+
+/* ---------- keyboard ---------- */
+addEventListener("keydown", e => {
+  const typing = /INPUT|TEXTAREA/.test(document.activeElement?.tagName || "");
+  if(e.key === "Escape"){
+    const q = $("#q");
+    if(ui.q || typing){ q.value = ""; ui.q = ""; q.blur(); renderList(); }
+    return;
+  }
+  if(typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if(e.key === "/"){ e.preventDefault(); if(ui.view !== "agents") location.hash = "#/agents"; $("#q").focus(); return; }
+  if(/^[1-7]$/.test(e.key)){ location.hash = "#/" + VIEWS[+e.key-1]; return; }
+  if(ui.view !== "agents") return;
+  if(e.key === "o"){ const s = ui.detail; if(s?.live && (s.hostId || s.provider === "google" || s.entry === "antigravity")) act("open"); return; }
+  if(e.key === "f"){ act("reveal"); return; }
+  if(["j","k","ArrowDown","ArrowUp"].includes(e.key)){
+    e.preventDefault();
+    const ids = [...document.querySelectorAll("#rows .row")].map(r => r.dataset.id);
+    if(!ids.length) return;
+    const i = ids.indexOf(ui.sel);
+    const n = (e.key === "j" || e.key === "ArrowDown") ? Math.min(ids.length-1, i+1) : Math.max(0, i-1);
+    location.hash = "#/agents/" + ids[n];
+    requestAnimationFrame(() => document.querySelector(`#rows .row[data-id="${ids[n]}"]`)?.scrollIntoView({block:"nearest"}));
+  }
+});
+
+window.addEventListener("error", e => {
+  if(/ResizeObserver loop/.test(e.message)) return;   // harmless browser notice, not a page fault
+  const s = $("#stale");
+  s.style.display = "block";
+  s.textContent = "This page hit a script error: " + e.message;
+});
+route();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "plugins": {
+    "toolkit@market": [
+      {
+        "scope": "user",
+        "installPath": "__HOME__/.claude/plugins/cache/market/toolkit/1.0.0",
+        "version": "1.0.0",
+        "lastUpdated": "2026-11-01T10:00:00.000Z"
+      }
+    ],
+    "solo@market": [
+      {
+        "scope": "user",
+        "installPath": "__HOME__/.claude/plugins/cache/market/solo/2.0.0",
+        "version": "2.0.0",
+        "lastUpdated": "2026-11-02T10:00:00.000Z"
+      }
+    ],
+    "empty@market": []
+  }
+}

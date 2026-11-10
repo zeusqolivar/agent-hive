@@ -1,0 +1,15 @@
+{
+ "doing": null,
+ "group": "idle",
+ "headline": "After the big output, note 3.",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "idle"
+  },
+  "subsRunning": 0,
+  "transcript": "big"
+ },
+ "questions": [],
+ "reason": null
+}

@@ -1,0 +1,15 @@
+{
+ "doing": "think",
+ "group": "working",
+ "headline": "Thinking",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "busy"
+  },
+  "subsRunning": 0,
+  "transcript": null
+ },
+ "questions": [],
+ "reason": null
+}

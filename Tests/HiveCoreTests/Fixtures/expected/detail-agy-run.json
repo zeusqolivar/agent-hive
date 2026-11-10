@@ -1,0 +1,181 @@
+{
+ "ask": null,
+ "branch": null,
+ "canReply": false,
+ "contextTokens": 3600,
+ "cwd": "/fixture/Projects/gemini app",
+ "doing": "run",
+ "effort": null,
+ "entry": "antigravity",
+ "events": [
+  {
+   "body": "npm run build",
+   "id": "19:run_command",
+   "k": "tool",
+   "t": 1794311880,
+   "title": "Build the site",
+   "tool": "run_command",
+   "verb": "run"
+  },
+  {
+   "body": "Building the page now.",
+   "id": "19:say",
+   "k": "say",
+   "t": 1794311880,
+   "title": "Building the page now."
+  },
+  {
+   "body": "__HOME__/Projects/gemini app/hero.html",
+   "id": "16:write_file",
+   "k": "tool",
+   "t": 1794310370,
+   "title": "Write ~/Projects/gemini app/hero.html",
+   "tool": "write_file",
+   "verb": "write"
+  },
+  {
+   "body": "{'AbsolutePath': '__HOME__/Projects/gemini app/style.css'}",
+   "id": "14:view_file",
+   "k": "tool",
+   "t": 1794310350,
+   "title": "Use view_file",
+   "tool": "view_file",
+   "verb": "tool"
+  },
+  {
+   "body": "{'Action': 'list', 'toolSummary': 'List the background tasks'}",
+   "id": "12:manage_task",
+   "k": "tool",
+   "t": 1794310330,
+   "title": "List the background tasks",
+   "tool": "manage_task",
+   "verb": "tool"
+  },
+  {
+   "body": "{'ServerName': 'figma', 'ToolName': 'get_file', 'Arguments': '{}'}",
+   "id": "10:call_mcp_tool",
+   "k": "tool",
+   "t": 1794310310,
+   "title": "Search ",
+   "tool": "call_mcp_tool",
+   "verb": "web"
+  },
+  {
+   "body": "Review the landing page.",
+   "id": "8:invoke_subagent",
+   "k": "tool",
+   "t": 1794310290,
+   "title": "Subagent: Reviewer",
+   "tool": "invoke_subagent",
+   "verb": "tool"
+  },
+  {
+   "body": "{'query': 'hero image ideas'}",
+   "id": "6:search_web",
+   "k": "tool",
+   "t": 1794310270,
+   "title": "Search hero image ideas",
+   "tool": "search_web",
+   "verb": "web"
+  },
+  {
+   "body": "__HOME__/Projects/gemini app/index.html",
+   "id": "4:edit_file",
+   "k": "tool",
+   "t": 1794310250,
+   "title": "Write ~/Projects/gemini app/index.html",
+   "tool": "edit_file",
+   "verb": "write"
+  },
+  {
+   "body": "__HOME__/Projects/gemini app/index.html",
+   "id": "2:read_file",
+   "k": "tool",
+   "t": 1794310230,
+   "title": "Read ~/Projects/gemini app/index.html",
+   "tool": "read_file",
+   "verb": "read"
+  },
+  {
+   "body": "I'll start with the layout.",
+   "id": "2:say",
+   "k": "say",
+   "t": 1794310230,
+   "title": "I'll start with the layout."
+  },
+  {
+   "body": "Build the landing page for the **gemini app**.",
+   "id": "0:you",
+   "k": "you",
+   "t": 1794310210,
+   "title": "Build the landing page for the gemini app."
+  }
+ ],
+ "formerNames": [],
+ "group": "working",
+ "headline": "Build the site",
+ "helpers": [],
+ "hostId": "antigravity",
+ "id": "agy-run-0001",
+ "lastText": "Building the page now.",
+ "lastTextTs": 1794311880,
+ "lastTs": 1794311880,
+ "live": true,
+ "mode": null,
+ "model": "Gemini",
+ "name": "Build the landing page",
+ "pid": 424242,
+ "plan": null,
+ "planItems": [],
+ "processes": {
+  "commands": [
+   {
+    "cmd": "/bin/zsh -c npm run build",
+    "cpu": 30.0,
+    "pid": 424244,
+    "rssMB": 80,
+    "uptime": 60
+   },
+   {
+    "cmd": "/Applications/Antigravity.app/Contents/Resources/bin/language_server --port 1",
+    "cpu": 1.5,
+    "pid": 424243,
+    "rssMB": 300,
+    "uptime": 7100
+   }
+  ],
+  "cpu": 36.0,
+  "rssMB": 1280,
+  "uptime": 7200
+ },
+ "project": "gemini app",
+ "prompt": "Build the landing page for the **gemini app**.",
+ "promptTs": 1794310210,
+ "provider": "google",
+ "prs": [],
+ "questions": [],
+ "reason": null,
+ "recap": null,
+ "replyNote": null,
+ "resumeCommand": "open -a Antigravity '/fixture/Projects/gemini app'",
+ "shortCwd": "/fixture/Projects/gemini app",
+ "startedAt": 1794310200,
+ "statusSince": 1794311880,
+ "subagentList": [],
+ "subagents": {
+  "running": 0,
+  "total": 0
+ },
+ "tokens": {
+  "cacheRead": 2700,
+  "cacheWrite": 0,
+  "input": 10800,
+  "output": 470,
+  "responses": 9
+ },
+ "transcriptMB": 0.0,
+ "uptime": 7200,
+ "version": "1.2.3",
+ "webUrl": "http://127.0.0.1:50001/c/agy-run-0001",
+ "worktree": null
+}

@@ -1,0 +1,51 @@
+{
+ "helpers": [
+  {
+   "description": "Find the parser callers",
+   "doing": "read",
+   "id": "a1b2c3d4",
+   "task": "Read main.swift",
+   "type": "Explore"
+  }
+ ],
+ "list": [
+  {
+   "description": "Write parser tests",
+   "id": "e5f6a7b8",
+   "lastTs": 1794311940,
+   "path": "__HOME__/.claude/projects/-fixture-Projects-demo/sess-main-0001/subagents/agent-e5f6a7b8.jsonl",
+   "startedAt": 1794309228,
+   "state": "done",
+   "type": "general-purpose"
+  },
+  {
+   "description": "Find the parser callers",
+   "id": "a1b2c3d4",
+   "lastTs": 1794311940,
+   "path": "__HOME__/.claude/projects/-fixture-Projects-demo/sess-main-0001/subagents/agent-a1b2c3d4.jsonl",
+   "startedAt": 1794309228,
+   "state": "running",
+   "type": "Explore"
+  }
+ ],
+ "views": [
+  {
+   "description": "Write parser tests",
+   "id": "e5f6a7b8",
+   "last": "Wrote three tests. They cover empty input.",
+   "lastTs": 1794311940,
+   "startedAt": 1794309228,
+   "state": "done",
+   "type": "general-purpose"
+  },
+  {
+   "description": "Find the parser callers",
+   "id": "a1b2c3d4",
+   "last": "Read main.swift",
+   "lastTs": 1794311940,
+   "startedAt": 1794309228,
+   "state": "running",
+   "type": "Explore"
+  }
+ ]
+}

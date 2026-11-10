@@ -1,0 +1,51 @@
+{
+ "file": "__HOME__/.gemini/antigravity/brain/agy-idle-0003/.system_generated/logs/transcript.jsonl",
+ "tail": {
+  "ask": null,
+  "askTs": null,
+  "branch": null,
+  "contextTokens": 500,
+  "cwd": null,
+  "effort": null,
+  "events": [
+   {
+    "body": "Deploy the preview.",
+    "id": "0:you",
+    "k": "you",
+    "t": 1794308010,
+    "title": "Deploy the preview."
+   },
+   {
+    "body": "npm run deploy",
+    "id": "1:run_command",
+    "k": "tool",
+    "t": 1794308020,
+    "title": "Run npm run deploy",
+    "tool": "run_command",
+    "verb": "run"
+   },
+   {
+    "body": "Deployed the preview. It is live on the staging site.",
+    "id": "3:say",
+    "k": "say",
+    "t": 1794308040,
+    "title": "Deployed the preview. It is live on the staging site."
+   }
+  ],
+  "lastText": "Deployed the preview. It is live on the staging site.",
+  "lastTextTs": 1794308040,
+  "lastTs": 1794308050,
+  "mode": null,
+  "model": "Gemini",
+  "mtime": 1794311940,
+  "pending": [],
+  "plan": [],
+  "prompt": "Deploy the preview.",
+  "promptTs": 1794308010,
+  "prs": [],
+  "recap": null,
+  "size": 1139,
+  "title": null,
+  "turnEnded": true
+ }
+}

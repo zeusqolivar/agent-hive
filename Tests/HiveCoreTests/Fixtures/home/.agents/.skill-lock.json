@@ -1,0 +1,8 @@
+{
+  "skills": {
+    "shared-one": {
+      "source": "github:example/skills",
+      "updatedAt": "2026-11-03T08:00:00Z"
+    }
+  }
+}

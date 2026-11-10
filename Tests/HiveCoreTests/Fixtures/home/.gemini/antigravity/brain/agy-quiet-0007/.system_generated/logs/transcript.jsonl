@@ -1,0 +1,2 @@
+{"step_index": 0, "source": "CORTEX_STEP_SOURCE_USER_EXPLICIT", "type": "USER_INPUT", "status": "CORTEX_STEP_STATUS_DONE", "created_at": "2026-11-10T11:00:10Z", "content": "Read the whole codebase."}
+{"step_index": 1, "source": "CORTEX_STEP_SOURCE_MODEL", "type": "PLANNER_RESPONSE", "status": "CORTEX_STEP_STATUS_DONE", "created_at": "2026-11-10T11:00:20Z", "input_tokens": 1000, "cache_read_tokens": 200, "output_tokens": 50, "tool_calls": [{"name": "read_resource", "args": {"ServerName": "docs", "Uri": "docs://guide"}}]}

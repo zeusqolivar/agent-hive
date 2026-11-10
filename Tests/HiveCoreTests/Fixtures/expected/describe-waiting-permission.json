@@ -1,0 +1,16 @@
+{
+ "doing": null,
+ "group": "needs",
+ "headline": "Needs your OK to run Build the package",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "waiting",
+   "waitingFor": "permission prompt"
+  },
+  "subsRunning": 0,
+  "transcript": "main"
+ },
+ "questions": [],
+ "reason": "permission"
+}

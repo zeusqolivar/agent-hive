@@ -1,0 +1,884 @@
+{
+ "items": [
+  {
+   "err": false,
+   "group": "working",
+   "id": "19:say",
+   "k": "say",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794311880,
+   "title": "Building the page now."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "19:run_command",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794311880,
+   "title": "Build the site"
+  },
+  {
+   "err": false,
+   "group": "needs",
+   "id": "1:say",
+   "k": "say",
+   "name": "Colours",
+   "sid": "agy-ask-0002",
+   "t": 1794311120,
+   "title": "Two good options."
+  },
+  {
+   "err": false,
+   "group": "needs",
+   "id": "1:ask_question",
+   "k": "tool",
+   "name": "Colours",
+   "sid": "agy-ask-0002",
+   "t": 1794311120,
+   "title": "Use ask_question"
+  },
+  {
+   "err": false,
+   "group": "needs",
+   "id": "0:you",
+   "k": "you",
+   "name": "Colours",
+   "sid": "agy-ask-0002",
+   "t": 1794311110,
+   "title": "Pick a colour scheme."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "16:write_file",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310370,
+   "title": "Write ~/Projects/gemini app/hero.html"
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "14:view_file",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310350,
+   "title": "Use view_file"
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "12:manage_task",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310330,
+   "title": "List the background tasks"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u009:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794310320,
+   "title": "Synthetic."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "10:call_mcp_tool",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310310,
+   "title": "Search "
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u008:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794310300,
+   "title": "A small model reply."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "8:invoke_subagent",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310290,
+   "title": "Subagent: Reviewer"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u007:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794310280,
+   "title": "Same output again, no growth."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "6:search_web",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310270,
+   "title": "Search hero image ideas"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u006:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794310260,
+   "title": "Block with 40 tokens so far."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "4:edit_file",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310250,
+   "title": "Write ~/Projects/gemini app/index.html"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u005:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794310240,
+   "title": "Block with 25 tokens so far."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "2:say",
+   "k": "say",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310230,
+   "title": "I'll start with the layout."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "2:read_file",
+   "k": "tool",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310230,
+   "title": "Read ~/Projects/gemini app/index.html"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u004:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794310220,
+   "title": "Block with 10 tokens so far."
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "0:you",
+   "k": "you",
+   "name": "Build the landing page",
+   "sid": "agy-run-0001",
+   "t": 1794310210,
+   "title": "Build the landing page for the gemini app."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_b2",
+   "k": "tool",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308820,
+   "title": "Run Build the package"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_a1",
+   "k": "tool",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308800,
+   "title": "Start subagent: Find the parser callers"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-main-0001-u019:0",
+   "k": "say",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308780,
+   "title": "The tests fail because the input is never stored."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_m1",
+   "k": "tool",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308740,
+   "title": "Use figma: get screenshot"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_w1",
+   "k": "tool",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308700,
+   "title": "Search the web for swift regex lookbehind"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-main-0001-u012:0",
+   "k": "event",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308640,
+   "title": "Background task finished"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_e1",
+   "k": "tool",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308600,
+   "title": "Edit parse.swift"
+  },
+  {
+   "err": true,
+   "group": "ended",
+   "id": "toolu_b1",
+   "k": "tool",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308540,
+   "title": "Run Run the tests"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_r1",
+   "k": "tool",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308500,
+   "title": "Read parse.swift"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-main-0001-u003:1",
+   "k": "say",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308460,
+   "title": "I'll start by reading the parser."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-main-0001-u002:0",
+   "k": "you",
+   "name": "Please fix the parser in src/parse.swift. stack trace here",
+   "sid": "sess-main-0001",
+   "t": 1794308440,
+   "title": "Please fix the parser in src/parse.swift. stack trace here"
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "1:read_resource",
+   "k": "tool",
+   "name": "Read the whole codebase.",
+   "sid": "agy-quiet-0007",
+   "t": 1794308420,
+   "title": "Read docs://guide"
+  },
+  {
+   "err": false,
+   "group": "working",
+   "id": "0:you",
+   "k": "you",
+   "name": "Read the whole codebase.",
+   "sid": "agy-quiet-0007",
+   "t": 1794308410,
+   "title": "Read the whole codebase."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-questions-0011-u006:0",
+   "k": "say",
+   "name": "Add dark mode to the settings page.",
+   "sid": "sess-questions-0011",
+   "t": 1794308120,
+   "title": "Dark mode is in. The toggle sits under Appearance, next to the \"Reset?\" button. css a:hover { color: red } /* why? */  Left for you to decide: whether it shoul…"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_qb1",
+   "k": "tool",
+   "name": "Add dark mode to the settings page.",
+   "sid": "sess-questions-0011",
+   "t": 1794308080,
+   "title": "Run Start the dev server"
+  },
+  {
+   "err": false,
+   "group": "idle",
+   "id": "3:say",
+   "k": "say",
+   "name": "Deploy the preview.",
+   "sid": "agy-idle-0003",
+   "t": 1794308040,
+   "title": "Deployed the preview. It is live on the staging site."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_qe1",
+   "k": "tool",
+   "name": "Add dark mode to the settings page.",
+   "sid": "sess-questions-0011",
+   "t": 1794308040,
+   "title": "Edit settings.css"
+  },
+  {
+   "err": false,
+   "group": "idle",
+   "id": "1:run_command",
+   "k": "tool",
+   "name": "Deploy the preview.",
+   "sid": "agy-idle-0003",
+   "t": 1794308020,
+   "title": "Run npm run deploy"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-questions-0011-u001:0",
+   "k": "you",
+   "name": "Add dark mode to the settings page.",
+   "sid": "sess-questions-0011",
+   "t": 1794308020,
+   "title": "Add dark mode to the settings page."
+  },
+  {
+   "err": false,
+   "group": "idle",
+   "id": "0:you",
+   "k": "you",
+   "name": "Deploy the preview.",
+   "sid": "agy-idle-0003",
+   "t": 1794308010,
+   "title": "Deploy the preview."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_q1",
+   "k": "tool",
+   "name": "Pick a database.",
+   "sid": "sess-question-0006",
+   "t": 1794307040,
+   "title": "Ask Which database should I use?"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-question-0006-u001:0",
+   "k": "you",
+   "name": "Pick a database.",
+   "sid": "sess-question-0006",
+   "t": 1794307020,
+   "title": "Pick a database."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_p1",
+   "k": "tool",
+   "name": "Plan the migration.",
+   "sid": "sess-plan-0007",
+   "t": 1794306840,
+   "title": "Ask you to approve the plan"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-plan-0007-u001:0",
+   "k": "you",
+   "name": "Plan the migration.",
+   "sid": "sess-plan-0007",
+   "t": 1794306820,
+   "title": "Plan the migration."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-planned-0009-u003:0",
+   "k": "say",
+   "name": "Tidy the README.",
+   "sid": "sess-planned-0009",
+   "t": 1794306660,
+   "title": "Rewriting the install section now."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-planned-0009-u001:0",
+   "k": "you",
+   "name": "Tidy the README.",
+   "sid": "sess-planned-0009",
+   "t": 1794306620,
+   "title": "Tidy the README."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-asked-0002-u006:0",
+   "k": "recap",
+   "name": "Make the release build work.",
+   "sid": "sess-asked-0002",
+   "t": 1794304920,
+   "title": "Fixed the release build. It now compiles in 40 seconds."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-asked-0002-u005:0",
+   "k": "say",
+   "name": "Make the release build work.",
+   "sid": "sess-asked-0002",
+   "t": 1794304900,
+   "title": "The release build works now."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_ab1",
+   "k": "tool",
+   "name": "Make the release build work.",
+   "sid": "sess-asked-0002",
+   "t": 1794304860,
+   "title": "Run swift build -c release"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-asked-0002-u002:0",
+   "k": "say",
+   "name": "Make the release build work.",
+   "sid": "sess-asked-0002",
+   "t": 1794304840,
+   "title": "Building the release now."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-asked-0002-u001:0",
+   "k": "you",
+   "name": "Make the release build work.",
+   "sid": "sess-asked-0002",
+   "t": 1794304820,
+   "title": "Make the release build work."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-done-0003-u004:0",
+   "k": "recap",
+   "name": "Release notes",
+   "sid": "sess-done-0003",
+   "t": 1794301280,
+   "title": "Shipped the release notes for version 2.0. Next is the changelog."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-done-0003-u003:1",
+   "k": "say",
+   "name": "Release notes",
+   "sid": "sess-done-0003",
+   "t": 1794301260,
+   "title": "Here are the notes. Added a parser."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-done-0003-u001:0",
+   "k": "you",
+   "name": "Release notes",
+   "sid": "sess-done-0003",
+   "t": 1794301220,
+   "title": "Write the release notes for 2.0."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u031:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292620,
+   "title": "After the big output, note 3."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u030:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292600,
+   "title": "After the big output, note 2."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u029:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292580,
+   "title": "After the big output, note 1."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "toolu_g1",
+   "k": "tool",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292540,
+   "title": "Run cat huge.log"
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u026:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292520,
+   "title": "Step 25: looked at log file number 25."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u025:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292500,
+   "title": "Step 24: looked at log file number 24."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u024:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292480,
+   "title": "Step 23: looked at log file number 23."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u023:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292460,
+   "title": "Step 22: looked at log file number 22."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u022:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292440,
+   "title": "Step 21: looked at log file number 21."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u021:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292420,
+   "title": "Step 20: looked at log file number 20."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u020:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292400,
+   "title": "Step 19: looked at log file number 19."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u019:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292380,
+   "title": "Step 18: looked at log file number 18."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u018:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292360,
+   "title": "Step 17: looked at log file number 17."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u017:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292340,
+   "title": "Step 16: looked at log file number 16."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u016:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292320,
+   "title": "Step 15: looked at log file number 15."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u015:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292300,
+   "title": "Step 14: looked at log file number 14."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u014:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292280,
+   "title": "Step 13: looked at log file number 13."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u013:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292260,
+   "title": "Step 12: looked at log file number 12."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u012:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292240,
+   "title": "Step 11: looked at log file number 11."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u011:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292220,
+   "title": "Step 10: looked at log file number 10."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u010:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292200,
+   "title": "Step 9: looked at log file number 9."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u009:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292180,
+   "title": "Step 8: looked at log file number 8."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u008:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292160,
+   "title": "Step 7: looked at log file number 7."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u007:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292140,
+   "title": "Step 6: looked at log file number 6."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u006:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292120,
+   "title": "Step 5: looked at log file number 5."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u005:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292100,
+   "title": "Step 4: looked at log file number 4."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u004:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292080,
+   "title": "Step 3: looked at log file number 3."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u003:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292060,
+   "title": "Step 2: looked at log file number 2."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u002:0",
+   "k": "say",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292040,
+   "title": "Step 1: looked at log file number 1."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-big-0004-u001:0",
+   "k": "you",
+   "name": "Summarise the logs.",
+   "sid": "sess-big-0004",
+   "t": 1794292020,
+   "title": "Summarise the logs."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u002:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794135620,
+   "title": "Two days ago."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u001:0",
+   "k": "you",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1794052820,
+   "title": "Count tokens."
+  },
+  {
+   "err": false,
+   "group": "ended",
+   "id": "sess-usage-0005-u003:0",
+   "k": "say",
+   "name": "Count tokens.",
+   "sid": "sess-usage-0005",
+   "t": 1793448020,
+   "title": "Ten days ago, outside the window."
+  }
+ ]
+}

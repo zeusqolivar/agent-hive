@@ -1,0 +1,58 @@
+{
+ "file": "__HOME__/.claude/projects/-fixture-Projects-demo/sess-done-0003.jsonl",
+ "tail": {
+  "ask": null,
+  "askTs": null,
+  "branch": null,
+  "contextTokens": 4312,
+  "cwd": "__HOME__/Projects/demo",
+  "effort": "high",
+  "events": [
+   {
+    "body": "Write the release notes for 2.0.",
+    "id": "sess-done-0003-u001:0",
+    "k": "you",
+    "t": 1794301220,
+    "title": "Write the release notes for 2.0."
+   },
+   {
+    "body": "Here are the notes.\n\n**Added** a parser.",
+    "id": "sess-done-0003-u003:1",
+    "k": "say",
+    "t": 1794301260,
+    "title": "Here are the notes. Added a parser."
+   },
+   {
+    "body": "Shipped the release notes for version 2.0. Next is the changelog.",
+    "id": "sess-done-0003-u004:0",
+    "k": "recap",
+    "t": 1794301280,
+    "title": "Shipped the release notes for version 2.0. Next is the changelog."
+   }
+  ],
+  "lastText": "Here are the notes.\n\n**Added** a parser.",
+  "lastTextTs": 1794301260,
+  "lastTs": 1794301280,
+  "mode": null,
+  "model": "claude-opus-5-5",
+  "mtime": 1794311940,
+  "pending": [],
+  "plan": [
+   {
+    "state": "completed",
+    "text": "Collect changes"
+   },
+   {
+    "state": "completed",
+    "text": "Write notes"
+   }
+  ],
+  "prompt": "Write the release notes for 2.0.",
+  "promptTs": 1794301220,
+  "prs": [],
+  "recap": "Shipped the release notes for version 2.0. Next is the changelog.",
+  "size": 2788,
+  "title": "Release notes",
+  "turnEnded": true
+ }
+}

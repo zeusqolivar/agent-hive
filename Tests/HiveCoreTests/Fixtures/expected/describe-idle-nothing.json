@@ -1,0 +1,15 @@
+{
+ "doing": null,
+ "group": "idle",
+ "headline": "No activity yet",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "idle"
+  },
+  "subsRunning": 0,
+  "transcript": null
+ },
+ "questions": [],
+ "reason": null
+}

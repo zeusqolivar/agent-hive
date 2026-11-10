@@ -1,0 +1,52 @@
+{
+ "file": "__HOME__/.claude/projects/-fixture-Projects-demo/sess-main-0001/subagents/agent-e5f6a7b8.jsonl",
+ "tail": {
+  "ask": null,
+  "askTs": null,
+  "branch": "feat/parser",
+  "contextTokens": 4312,
+  "cwd": "__HOME__/Projects/demo",
+  "effort": "high",
+  "events": [
+   {
+    "body": "Write tests for the parser.",
+    "id": "sess-main-0001-u001:0",
+    "k": "you",
+    "t": 1794309620,
+    "title": "Write tests for the parser."
+   },
+   {
+    "body": "~/Projects/demo/Tests/ParserTests.swift",
+    "id": "toolu_s3",
+    "k": "tool",
+    "out": "File created.",
+    "t": 1794309640,
+    "title": "Write ParserTests.swift",
+    "tool": "Write",
+    "verb": "write"
+   },
+   {
+    "body": "Wrote three tests. They cover empty input.",
+    "id": "sess-main-0001-u004:0",
+    "k": "say",
+    "t": 1794309680,
+    "title": "Wrote three tests. They cover empty input."
+   }
+  ],
+  "lastText": "Wrote three tests. They cover empty input.",
+  "lastTextTs": 1794309680,
+  "lastTs": 1794309680,
+  "mode": null,
+  "model": "claude-haiku-5",
+  "mtime": 1794311940,
+  "pending": [],
+  "plan": [],
+  "prompt": "Write tests for the parser.",
+  "promptTs": 1794309620,
+  "prs": [],
+  "recap": null,
+  "size": 2338,
+  "title": null,
+  "turnEnded": true
+ }
+}

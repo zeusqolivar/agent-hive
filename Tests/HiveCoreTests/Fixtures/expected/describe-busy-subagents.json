@@ -1,0 +1,15 @@
+{
+ "doing": "subagents",
+ "group": "working",
+ "headline": "Waiting on 2 subagents",
+ "input": {
+  "commands": [],
+  "raw": {
+   "status": "busy"
+  },
+  "subsRunning": 2,
+  "transcript": "planned"
+ },
+ "questions": [],
+ "reason": null
+}

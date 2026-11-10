@@ -1,0 +1,71 @@
+{
+ "file": "__HOME__/.claude/projects/-fixture-Projects-demo/sess-main-0001/subagents/agent-a1b2c3d4.jsonl",
+ "tail": {
+  "ask": null,
+  "askTs": null,
+  "branch": "feat/parser",
+  "contextTokens": 4312,
+  "cwd": "__HOME__/Projects/demo",
+  "effort": "high",
+  "events": [
+   {
+    "body": "List every caller of Parser.",
+    "id": "sess-main-0001-u001:0",
+    "k": "you",
+    "t": 1794311120,
+    "title": "List every caller of Parser."
+   },
+   {
+    "body": "Searching for callers.",
+    "id": "sess-main-0001-u002:0",
+    "k": "say",
+    "t": 1794311140,
+    "title": "Searching for callers."
+   },
+   {
+    "body": "Parser\\(",
+    "id": "toolu_s1",
+    "k": "tool",
+    "out": "src/main.swift:3",
+    "t": 1794311160,
+    "title": "Search for Parser\\(",
+    "tool": "Grep",
+    "verb": "search"
+   },
+   {
+    "body": "~/Projects/demo/src/main.swift",
+    "id": "toolu_s2",
+    "k": "tool",
+    "t": 1794311200,
+    "title": "Read main.swift",
+    "tool": "Read",
+    "verb": "read"
+   }
+  ],
+  "lastText": "Searching for callers.",
+  "lastTextTs": 1794311140,
+  "lastTs": 1794311200,
+  "mode": null,
+  "model": "claude-haiku-5",
+  "mtime": 1794311940,
+  "pending": [
+   {
+    "body": "~/Projects/demo/src/main.swift",
+    "id": "toolu_s2",
+    "k": "tool",
+    "t": 1794311200,
+    "title": "Read main.swift",
+    "tool": "Read",
+    "verb": "read"
+   }
+  ],
+  "plan": [],
+  "prompt": "List every caller of Parser.",
+  "promptTs": 1794311120,
+  "prs": [],
+  "recap": null,
+  "size": 2954,
+  "title": null,
+  "turnEnded": false
+ }
+}
