@@ -134,3 +134,6 @@ Issues and pull requests are welcome. Please keep fixtures free of real paths, n
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+Agent Hive is an independent project. It isn't affiliated with or endorsed by Anthropic or Google. Claude and
+Claude Code are trademarks of Anthropic; Antigravity and Gemini are trademarks of Google.
