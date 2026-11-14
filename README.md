@@ -30,6 +30,11 @@ network. See [What it reads](#what-it-reads).
 A menu bar icon shows how many sessions need you. **Open in Claude** jumps straight to a session in the Claude
 app.
 
+**Keep Mac awake**, in the menu bar menu and Settings, stops your Mac from going to sleep on its own so agents
+keep running: *While agents are working* (lets it sleep once every session is idle), *Always*, or *For 1 hour*. A
+coffee cup appears on the menu bar icon while it's on. The screen can still turn off, and closing the lid on
+battery still sleeps.
+
 ### When a session "needs you"
 
 - It's waiting on a permission prompt, a question, or a plan to approve.
@@ -93,9 +98,10 @@ send a reply; and `open` and `osascript` to bring Antigravity forward when you c
 You can reply to a session that **isn't running**. The app runs `claude --resume <id> -p` in the session's
 folder, with your text on stdin and your own permission settings; it never adds flags that skip permissions.
 
-A session that is running, in the Claude app or a terminal, has no reply box: two writers split its
-conversation into separate branches. Permission prompts can't be answered from outside Claude either, so those
-sessions show **Open in Claude** instead. Replies use the `claude` command line's own sign-in, which can differ
+A session that is running, in the Claude app or a terminal, can't take a reply from outside: two writers split
+its conversation into separate branches. For those, type your answer in the session's details and click **Copy
+& open in Claude**: your answer is copied and the session opens in Claude, ready to paste. Permission prompts
+can't be answered from outside Claude either. Replies use the `claude` command line's own sign-in, which can differ
 from the Claude app's. Details: [docs/spikes/S1-reply.md](docs/spikes/S1-reply.md).
 
 ## Known limitations

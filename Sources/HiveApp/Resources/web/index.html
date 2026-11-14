@@ -103,7 +103,8 @@ main{flex:1;min-height:0;display:flex}
 .btn.main:hover{opacity:.9;background:var(--ink)}
 .reply{display:flex;gap:8px;align-items:flex-end;margin-top:12px;max-width:720px}
 .reply textarea{flex:1;min-height:44px;font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--raised);color:var(--ink);resize:vertical}
-.replynote{align-self:center;font-size:14px;color:var(--ink2)}
+.replynote{margin:10px 0 0;font-size:14px;color:var(--ink2);max-width:72ch}
+.hero.needs .replynote{color:var(--honey-ink2)}
 .hero.needs .btn{border-color:var(--honey-ink);background:transparent;color:var(--honey-ink)}
 .hero.needs .btn:hover{background:rgba(0,0,0,.08)}
 .hero.needs .btn.main{background:var(--honey-ink);color:var(--honey)}
@@ -253,8 +254,8 @@ td a:hover{text-decoration:underline}
 #roomModal[open]{display:flex;flex-direction:column}
 #roomModal::backdrop{background:rgba(8,10,16,.55)}
 #roomModalBody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
-#roomModal .x{position:absolute;top:12px;right:12px;z-index:2}
-#roomModal .hero{padding-right:90px}
+#roomModal .x{position:absolute;top:20px;right:28px;z-index:2}
+#roomModal .hero{padding-right:130px}
 #roomModal .back{display:none!important}
 /* terminal */
 #v-terminal.on{display:flex}
@@ -582,7 +583,8 @@ function renderDetail(){
   if(d.live) acts.push(`<a class="btn" href="#/terminal/${esc(d.id)}">Watch terminal</a>`);
   // Only an app that can send replies (capabilities.reply) offers a reply box; otherwise nothing new shows.
   const canReply = ui.board?.capabilities?.reply && d.canReply;
-  if(ui.board?.capabilities?.reply && !d.canReply && d.replyNote) acts.push(`<span class="replynote">${esc(d.replyNote)}</span>`);
+  // A running Claude session can't take a reply from outside, so offer to copy the answer and open it there.
+  const canCopyAnswer = !canReply && d.live && d.hostId && d.provider !== "google";
   if(d.cwd) acts.push(`<button class="btn" data-act="reveal">Show folder</button>`);
   if(!d.hostId && d.resumeCommand) acts.push(`<button class="btn ${d.live ? "" : "main"}" data-copy="${esc(d.resumeCommand)}">Copy resume command</button>`);
   for(const p of d.prs.slice(-3).reverse()) acts.push(`<a class="btn" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">PR #${esc(p.number)}</a>`);
@@ -638,6 +640,9 @@ function renderDetail(){
       <div class="since" data-sincetext>${esc(sinceText(d))}</div>
       <div class="acts">${acts.join("")}</div>
       ${canReply ? `<form class="reply" data-reply="${esc(d.id)}"><label class="sr" for="${el.id}-reply">Reply to ${esc(d.name)}</label><textarea id="${el.id}-reply" name="reply" rows="2" placeholder="Reply to ${esc(d.name)}">${esc(ui.replies[d.id] || "")}</textarea><button class="btn main" type="submit">Send</button></form>` : ""}
+      ${canCopyAnswer ? `<form class="reply" data-reply="${esc(d.id)}" data-mode="copy"><label class="sr" for="${el.id}-reply">Answer ${esc(d.name)}</label><textarea id="${el.id}-reply" name="reply" rows="2" placeholder="Type your answer here">${esc(ui.replies[d.id] || "")}</textarea><button class="btn main" type="submit">Copy &amp; open in Claude</button></form>
+        <p class="replynote">This session is running in Claude, so your answer is copied and the session opens there. Paste it with \u2318V and press Return.</p>` : ""}
+      ${!canReply && !canCopyAnswer && ui.board?.capabilities?.reply && d.replyNote ? `<p class="replynote">${esc(d.replyNote)}</p>` : ""}
     </div>
     <div class="columns"><div>${left.join("")}</div><div class="side">${side.join("")}</div></div>`;
   // A refresh can redraw the details while you type a reply; keep the cursor where it was.
@@ -724,13 +729,24 @@ const onDetailClick = async e => {
   if(a) return act(a.dataset.act);
   const c = e.target.closest("[data-copy]");
   if(c){
-    try { await navigator.clipboard.writeText(c.dataset.copy); toast("Copied the resume command."); }
+    try { if(!(await copyText(c.dataset.copy))) throw new Error(); toast("Copied the resume command."); }
     catch { toast("Your browser blocked copying."); }
   }
 };
 const onDetailChange = e => {
   if(e.target.id === "toolsToggle"){ ui.showTools = e.target.checked; renderDetail(); }
 };
+// Copies text with the clipboard API, or the older way where that isn't allowed (the app's own pages).
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  const t = document.createElement("textarea");
+  t.value = text; t.setAttribute("readonly", ""); t.style.cssText = "position:fixed;left:-9999px;top:0";
+  document.body.appendChild(t); t.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch {}
+  t.remove();
+  return ok;
+}
 // Replies: the text is sent as typed, and stays in the box until the app says it was sent.
 const onReplySubmit = async e => {
   const f = e.target.closest("form[data-reply]");
@@ -738,6 +754,12 @@ const onReplySubmit = async e => {
   e.preventDefault();
   const id = f.dataset.reply, text = f.querySelector("textarea").value, btn = f.querySelector("button");
   if(!text.trim() || btn.disabled) return;
+  if(f.dataset.mode === "copy"){
+    if(!(await copyText(text))){ toast("Couldn't copy the answer. Select it and press \u2318C, then open the session in Claude."); return; }
+    toast("Copied your answer. Paste it in Claude with \u2318V.");
+    act("open", id);
+    return;
+  }
   btn.disabled = true;
   try {
     const r = await api("/api/reply", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sessionId:id, text})});

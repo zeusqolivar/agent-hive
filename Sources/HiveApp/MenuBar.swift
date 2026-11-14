@@ -1,3 +1,4 @@
+import HiveCore
 import AppKit
 import SwiftUI
 
@@ -9,14 +10,16 @@ struct MenuBarLabel: View {
         HStack(spacing: 3) {
             Image(systemName: model.needsYou > 0 ? "hexagon.fill" : "hexagon")
             if model.needsYou > 0 { Text("\(model.needsYou)").monospacedDigit() }
+            if model.keepingAwake { Image(systemName: "cup.and.saucer.fill") }
         }
-        .accessibilityLabel(model.needsYou == 1 ? "Agent Hive, 1 session needs you"
-                            : "Agent Hive, \(model.needsYou) sessions need you")
+        .accessibilityLabel((model.needsYou == 1 ? "Agent Hive, 1 session needs you"
+                             : "Agent Hive, \(model.needsYou) sessions need you")
+                            + (model.keepingAwake ? ", keeping the Mac awake" : ""))
     }
 }
 
 struct MenuBarMenu: View {
-    let model: AppModel
+    @Bindable var model: AppModel
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
@@ -31,6 +34,11 @@ struct MenuBarMenu: View {
             }
         }
         Divider()
+        Picker(model.keepingAwake ? "Keeping Mac awake" : "Keep Mac awake", selection: $model.keepAwakeMode) {
+            ForEach(KeepAwakeMode.allCases, id: \.self) { mode in
+                Text(model.title(for: mode)).tag(mode)
+            }
+        }
         Button("Settings…") {
             NSApp.activate()
             openSettings()
