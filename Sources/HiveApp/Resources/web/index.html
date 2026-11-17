@@ -12,8 +12,13 @@
   --ink:#192132; --ink2:#465064; --ink3:#626C80; --line:#D2D7E2;
   --honey:#F5B700; --honey-soft:#FCE9AE; --honey-ink:#2A1F00; --honey-ink2:#574400;
   --work:#0B7480; --accent:#2F4DB0; --error:#B9301F; --good:#23744A; --bar:#3F5FBF;
-  --rm-wall:#CFE0E3; --rm-floor:#E3E8EF; --rm-tile:#D3DAE5; --rm-wood:#B98A5E; --rm-wood2:#8F6642; --rm-chair:#7D8799;
-  --rm-board:#2F4F46; --rm-sky:#BFE3F5; --rm-rug:#BCD8CF; --rm-panel:#FFFFFF; --rm-dark:#343B4D;
+  /* Classroom (room.js): a daytime room. Colours used in drawing maths must stay #rrggbb. */
+  --rm-wall:#ECE2CF; --rm-wain:#98AE93; --rm-trim:#6E4B33; --rm-floor:#CD9C66; --rm-slab:#7A5536; --rm-frame:#F6F1E7;
+  --rm-wood:#C28C58; --rm-wood2:#875A3B; --rm-metal:#4E5563; --rm-chair:#4F7F8F; --rm-dark:#2B2F3A; --rm-door:#9B6B45;
+  --rm-board:#2F4B40; --rm-chalk:#F1F4EC; --rm-sky:#79BCE6; --rm-sky2:#BCE0F3; --rm-sky3:#EAF4EC;
+  --rm-rug:#C3684A; --rm-rug2:#EEDCB6; --rm-mat:#F8D978; --rm-mat2:#E0A800; --rm-mat-ink:#5A4300;
+  --rm-leaf:#4C8A3B; --rm-leaf2:#80B657; --rm-pot:#C8693F; --rm-panel:#FFFDF8; --rm-plate:#F3E6C4; --rm-plate-ink:#3A2A14;
+  --rm-sun:rgba(255,242,206,.45); --rm-glow:255,198,122; --rm-glow-a:.28; --rm-ambient:none; --rm-shadow:rgba(70,40,15,.08); --rm-night:0;
   --sans:"Avenir Next","Avenir","Segoe UI",system-ui,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
 }
@@ -21,8 +26,13 @@
   --bg:#141824; --panel:#1B2030; --raised:#242A3C; --hover:#232939; --selected:#2C3550;
   --ink:#E7EAF2; --ink2:#AEB6C7; --ink3:#939CB0; --line:#30374A;
   --honey-soft:#4A3B0C;
-  --rm-wall:#262E42; --rm-floor:#1C2233; --rm-tile:#262D40; --rm-wood:#6A5140; --rm-wood2:#4C3A2D; --rm-chair:#3D4558;
-  --rm-board:#1E2F2B; --rm-sky:#141B33; --rm-rug:#2C4A44; --rm-panel:#2A3145; --rm-dark:#10131C;
+  /* The classroom in the evening: lamps on, the sky outside going dark. */
+  --rm-wall:#4A5A60; --rm-wain:#5A4232; --rm-trim:#2E2119; --rm-floor:#94643F; --rm-slab:#3B281B; --rm-frame:#D8D0C0;
+  --rm-wood:#A06D45; --rm-wood2:#6A462E; --rm-metal:#3C414D; --rm-chair:#467080; --rm-dark:#15171E; --rm-door:#7A5236;
+  --rm-board:#253B32; --rm-chalk:#ECF0E6; --rm-sky:#141A3C; --rm-sky2:#40305E; --rm-sky3:#C7764A;
+  --rm-rug:#9A4A37; --rm-rug2:#D2BC8E; --rm-mat:#B38719; --rm-mat2:#F5B700; --rm-mat-ink:#FFE7A0;
+  --rm-leaf:#3F7535; --rm-leaf2:#64984A; --rm-pot:#A6573A; --rm-panel:#262C3C; --rm-plate:#3A3122; --rm-plate-ink:#F4E3BC;
+  --rm-sun:rgba(150,170,235,.07); --rm-glow:255,170,90; --rm-glow-a:.85; --rm-ambient:#C9C1DB; --rm-shadow:rgba(0,0,0,.17); --rm-night:1;
   --work:#4FC4D0; --accent:#9DB2F7; --error:#F2806F; --good:#62C894; --bar:#6F8CE8;
 }}
 *{box-sizing:border-box}
@@ -209,6 +219,12 @@ td a:hover{text-decoration:underline}
 #roster{width:320px;flex:none;overflow-y:auto;border-left:1px solid var(--line);background:var(--panel);font-size:14px}
 #roster[hidden],#roomEditor[hidden],#editRoom[hidden]{display:none}
 #editRoom{position:absolute;top:10px;left:10px;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.room-ctl{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--raised);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.room-ctl button{all:unset;box-sizing:border-box;display:grid;place-items:center;min-width:30px;height:28px;padding:0 6px;border-radius:6px;color:var(--ink);cursor:pointer;font-weight:600;font-size:13px}
+.room-ctl button:hover{background:var(--hover)}
+.room-ctl button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.room-ctl svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.room-ctl .sep{width:1px;height:18px;background:var(--line);margin:0 3px}
 #roomEditor{width:320px;flex:none;overflow-y:auto;border-left:1px solid var(--line);background:var(--panel);font-size:14px;display:flex;flex-direction:column}
 #roomEditor section,#roomEditor .ed-head{padding:12px 14px;border-bottom:1px solid var(--line)}
 #roomEditor h2{font-size:16px;margin:0}
@@ -380,9 +396,9 @@ td a:hover{text-decoration:underline}
     </div>
     <div id="detail"></div>
   </div>
-  <div class="view" id="v-classroom"><div id="roomBox"><button class="btn" id="editRoom" type="button">Edit room</button><canvas id="roomCanvas" role="img" aria-label="Classroom drawing of your live sessions. The list beside it has the same information."></canvas></div><aside id="roster" aria-label="Sessions in the room"></aside>
+  <div class="view" id="v-classroom"><div id="roomBox"><button class="btn" id="editRoom" type="button">Edit room</button><div class="room-ctl" role="toolbar" aria-label="Room view"><button type="button" id="roomRotL" title="Turn the room left ( [ )" aria-label="Turn the room left"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4H3v4M3.6 7.6A7 7 0 1 1 3 11"/></svg></button><button type="button" id="roomRotR" title="Turn the room right ( ] )" aria-label="Turn the room right"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13 4h4v4M16.4 7.6A7 7 0 1 0 17 11"/></svg></button><span class="sep"></span><button type="button" id="roomZoomOut" title="Zoom out (ctrl + scroll or pinch)" aria-label="Zoom out"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10"/></svg></button><button type="button" id="roomZoomIn" title="Zoom in (ctrl + scroll or pinch)" aria-label="Zoom in"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M10 5v10"/></svg></button><button type="button" id="roomFit" class="txt" title="Fit the room in view" aria-label="Fit the room in view">Fit</button></div><canvas id="roomCanvas" role="img" aria-label="Classroom drawing of your live sessions. The list beside it has the same information."></canvas></div><aside id="roster" aria-label="Sessions in the room"></aside>
     <aside id="roomEditor" aria-label="Edit the room" hidden>
-      <div class="ed-head"><h2>Edit the room</h2><p class="note">Drag things to move them. Click one to select it. Done saves the room for this page and the Agent Hive app.</p><p class="note warn" id="edNote" hidden></p></div>
+      <div class="ed-head"><h2>Edit the room</h2><p class="note">Drag things to move them. Click one to select it. Changes save as you make them.</p><p class="note warn" id="edNote" hidden></p></div>
       <p id="edStatus" role="status" aria-live="polite"></p>
       <section id="edSelected" hidden><h3 id="edSelName"></h3><p class="note" id="edSelHint"></p><div class="ed-row"><button class="btn" id="edRemove" type="button">Remove</button></div></section>
       <section><h3>Add</h3><p class="note">Drag onto the room, or click to add near the middle.</p><div class="ed-cat" id="edCatalogue" style="margin-top:8px"></div></section>
@@ -393,7 +409,7 @@ td a:hover{text-decoration:underline}
         <div class="ed-row"><label>Wall colour <input id="edWallColor" type="color"></label><button class="btn" id="edWallTheme" type="button">Use theme</button></div>
       </section>
       <section class="ed-acts"><button class="btn" id="edUndo" type="button">Undo</button><button class="btn" id="edExport" type="button">Export</button><button class="btn" id="edImport" type="button">Import</button><button class="btn" id="edReset" type="button">Reset to automatic</button><input id="edFile" type="file" accept=".json,application/json" hidden></section>
-      <div class="ed-foot"><button class="btn" id="edCancel" type="button">Cancel</button><button class="btn main" id="edDone" type="button">Done</button></div>
+      <div class="ed-foot"><button class="btn" id="edDiscard" type="button" title="Put the room back as it was when you started editing">Discard changes</button><button class="btn main" id="edDone" type="button">Done</button></div>
     </aside></div>
   <div class="view" id="v-terminal"><div id="termList"></div><div id="termMain"></div></div>
   <div class="view page" id="v-activity"></div>
@@ -947,12 +963,12 @@ async function loadRoom(){
   if(text !== ui.roomText){ ui.roomText = text; Room.setRoom(room); }
 }
 loadRoom();
-// Edit mode. Not in sample mode, which never saves. Switching views or reloading drops the draft.
+// Edit mode. Not in sample mode, which never saves. The editor saves each change as it's made; the room is
+// rebuilt from the last save when the editor closes.
 async function saveRoom(room){
   try { await api("/api/classroom", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({room})}); }
   catch(err){ return "The room wasn't saved: " + err.message; }
-  ui.roomText = JSON.stringify(room);
-  Room.setRoom(room);
+  ui.roomText = JSON.stringify(room ?? null);
   return null;
 }
 $("#editRoom").hidden = SAMPLE !== null;
@@ -960,8 +976,11 @@ $("#editRoom").addEventListener("click", () => {
   if(SAMPLE !== null || RoomEditor.isOpen()) return;
   $("#roster").hidden = true; $("#roomEditor").hidden = false; $("#editRoom").hidden = true;
   RoomEditor.open({room:Room.room(), problem:Room.problem(), canvas:$("#roomCanvas"), toast,
-    save:room => saveRoom(room), reset:() => saveRoom(null),
-    exit:() => { $("#roster").hidden = false; $("#roomEditor").hidden = true; $("#editRoom").hidden = SAMPLE !== null; }});
+    persist:room => saveRoom(room),
+    exit:saved => {
+      $("#roster").hidden = false; $("#roomEditor").hidden = true; $("#editRoom").hidden = SAMPLE !== null;
+      if(saved !== undefined) Room.setRoom(saved);
+    }});
 });
 
 /* ---------- terminal ---------- */

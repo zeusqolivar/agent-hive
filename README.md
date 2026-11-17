@@ -8,22 +8,23 @@ shows Google Antigravity conversations and OpenClaw automations when you have th
 
 ![The Classroom view, with sample sessions](docs/screenshot.png)
 
-*The Classroom view, shown with sample data. Each character is a session: hands up at the front means it's
-waiting on you; the shelf, globe and machine mean reading files, browsing and running a command; small
-characters are subagents.*
+*The Classroom view, shown with sample data. Each robot is a session: at its desk while it works (the screen glows),
+in the honey queue at the front with its hand up when it's waiting on you, at the bookshelf, globe or machine while
+it reads files, browses or runs a command, and on the rug when it's been idle a long time. Small robots are
+subagents.*
 
 Agent Hive reads local files. It never reads other tools' logins or tokens, and sends nothing over the network
 unless you add an API key for a usage service, which it sends only to that service. See
 [What it reads](#what-it-reads).
 
-> **Status:** early (0.3). It's used daily by its author, but expect rough edges.
+> **Status:** early (0.4). It's used daily by its author, but expect rough edges.
 
 ## What you get
 
 | View | What it shows |
 |---|---|
 | **Agents** | Every live session, grouped into *Needs you*, *Working* and *Idle*, with a plain-language headline. Open a session to see its plan, your last request, its latest report, a timeline, subagents, pull requests and running commands. |
-| **Classroom** | The same sessions as characters in a room, positioned by what they're really doing. Click one for its details. An editor lets you arrange desks, furniture and decorations on a tile grid. |
+| **Classroom** | The same sessions as robots in an isometric classroom, placed by what they're really doing. Rotate it, zoom and pan; click a robot for its details. An editor lets you arrange desks, furniture and decorations on a tile grid, and saves as you go. |
 | **Terminal** | A read-only, live feed of a session: commands and their output, file edits, tool calls, messages, and thinking where Claude Code saved its text. |
 | **Activity** | What all your agents have said recently, newest first. |
 | **Usage** | **Limits and spending**: your Claude plan's 5-hour and weekly windows (with the opt-in status line below), Codex's plan windows, and the balance and spending of the API keys you add. Then tokens written per day, project, model and session, for the last 7 days. |
