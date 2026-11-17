@@ -1,6 +1,6 @@
 [package]
 name = "agent-hive-shell"
-version = "0.3.2"
+version = "0.4.0"
 description = "Agent Hive's Windows shell: the pages in a WebView2 window, fed by hive-core.exe"
 authors = ["Zeus Solomon Q. Olivar"]
 edition = "2021"

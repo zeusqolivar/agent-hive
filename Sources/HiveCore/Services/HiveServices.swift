@@ -57,5 +57,5 @@ public final class HiveServices: Sendable {
 /// and the Tauri manifest cannot drift apart.
 public enum HiveVersion {
     public static let value: String =
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "0.3.2"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "0.4.0"
 }
