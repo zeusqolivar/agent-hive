@@ -10,6 +10,13 @@ use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 use helper::Helper;
 
+#[cfg(windows)]
+#[link(name = "user32")]
+extern "system" {
+    /// Lets another process take the foreground: only the process the user is clicking in can grant it.
+    fn AllowSetForegroundWindow(process: u32) -> i32;
+}
+
 /// The pages' origin. On Windows, WebView2 serves a registered protocol from `http://<scheme>.localhost/`.
 const APP_ORIGIN: &str = "hive.localhost";
 
@@ -45,6 +52,16 @@ fn main() {
                 Some(request.body().clone())
             };
             tauri::async_runtime::spawn(async move {
+                // An action may bring another app forward. Windows only lets the foreground process grant that
+                // right, and the shell is the one the user just clicked in, so it hands it to the helper here.
+                if path.starts_with("/api/action") {
+                    if let Some(pid) = helper.pid() {
+                        #[cfg(windows)]
+                        unsafe {
+                            AllowSetForegroundWindow(pid);
+                        }
+                    }
+                }
                 let answer = helper.request(&method, &path, body).await;
                 let response = Response::builder()
                     .status(answer.status)

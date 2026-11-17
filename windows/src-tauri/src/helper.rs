@@ -173,6 +173,11 @@ impl Helper {
         }
     }
 
+    /// The helper's process id, so the shell can let it take the foreground when a page asks to open an app.
+    pub fn pid(&self) -> Option<u32> {
+        self.inner.lock().unwrap().child.as_ref().map(|child| child.id())
+    }
+
     /// The close-the-shell path: ask politely by closing stdin, then end the process.
     pub fn stop(&self) {
         let mut inner = self.inner.lock().unwrap();
