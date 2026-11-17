@@ -16,7 +16,18 @@ enum Fixture {
     static let shared: URL = try! prepare()
 
     static func paths(_ home: URL = shared) -> HivePaths {
+        #if os(Windows)
+        // The fixtures are a Mac home. The Windows initialiser is pointed at the same subtrees so the contract
+        // tests compare the same files on both systems; the real Windows layout is covered by
+        // HivePathsTests.windowsPaths and Fixtures/windows-home.
+        var paths = HivePaths.windows(home: home,
+                                      appData: home.appending(path: "Library/Application Support",
+                                                              directoryHint: .isDirectory),
+                                      localAppData: home.appending(path: "opt", directoryHint: .isDirectory),
+                                      temp: home.appending(path: "tmp", directoryHint: .isDirectory))
+        #else
         var paths = HivePaths(home: home, uid: 501)
+        #endif
         paths.openclawPackage = home.appending(path: "opt/openclaw", directoryHint: .isDirectory)
         paths.tasksRoot = home.appending(path: "tmp-tasks", directoryHint: .isDirectory)
         paths.antigravityApp = home.appending(path: "opt/Antigravity.app", directoryHint: .isDirectory)

@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(SQLite3)
 import SQLite3
+#else
+import CSQLite
+#endif
 
 /// Opens a SQLite database read-only, as server.py's `open_readonly`. Antigravity's database is in WAL mode, and
 /// when its `-wal` and `-shm` files are absent a plain read-only open can fail ("unable to open database file");

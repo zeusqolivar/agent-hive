@@ -2,6 +2,11 @@ import Foundation
 
 /// `/api/system`: other agent apps running on the Mac, and OpenClaw's tasks and schedules.
 public struct SystemReport: Sendable {
+    /// The agents whose processes aren't sessions on the board.
+    ///
+    /// The macOS rows match app bundles. The Windows rows at the end match executable paths, because Windows has
+    /// no bundles: several agents share `claude.exe`, and every Electron app spawns `--type=` helpers, so the
+    /// helpers are skipped by pattern rather than by name. Only one set can ever match a given command line.
     static let otherAgents: [(label: String, pattern: NSRegularExpression)] = [
         ("skip", #"/Applications/Claude\.app/Contents/(Frameworks|Helpers)/"#),
         ("skip", #"/Applications/Antigravity\.app/Contents/Frameworks/"#),
@@ -14,6 +19,14 @@ public struct SystemReport: Sendable {
         ("Cursor", #"/Cursor\.app/Contents/MacOS/Cursor"#),
         ("OpenClaw gateway", #"openclaw/dist/index\.js gateway"#),
         ("Continue", #"/continue(\s|$)"#),
+        // Windows.
+        ("skip", #"--type=(renderer|gpu-process|utility|crashpad-handler|zygote)"#),
+        ("Claude desktop app", #"\\WindowsApps\\Claude_[\d.]+_x64__[^\\]+\\app\\Claude\.exe"#),
+        ("Claude Code", #"(\\Claude-Data\\claude_[^\\]+\\claude-code\\|\\\.local\\bin\\claude\.exe|@anthropic-ai[/\\]claude-code)"#),
+        ("Google Antigravity", #"\\Programs\\antigravity\\Antigravity\.exe"#),
+        ("Google Antigravity language server", #"\\antigravity\\resources\\bin\\language_server\.exe"#),
+        ("Cursor", #"\\Programs\\cursor\\Cursor\.exe"#),
+        ("OpenClaw gateway", #"openclaw[\\/]dist[\\/]index\.js gateway"#),
     ].map { ($0.0, try! NSRegularExpression(pattern: $0.1, options: [.caseInsensitive])) }
 
     let paths: HivePaths

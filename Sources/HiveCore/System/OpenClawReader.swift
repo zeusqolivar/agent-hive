@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(SQLite3)
 import SQLite3
+#else
+import CSQLite
+#endif
 
 /// OpenClaw's running tasks, recent problems, routines and schedules from `openclaw.sqlite`, opened
 /// read-only, as server.py's `openclaw_summary` reads them.

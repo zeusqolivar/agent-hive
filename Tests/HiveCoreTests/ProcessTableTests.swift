@@ -50,10 +50,14 @@ func proc(_ pid: Int32, _ ppid: Int32, _ cmd: String, cpu: Double = 0, rss: Int 
         #expect(PSProcessSource.parseEtime("3-00:00:01") == 3 * 86400 + 1)
     }
 
+    #if !os(Windows)
+    // The one test of the real `ps`. Windows reads its process list through WindowsProcessSource instead; the
+    // arithmetic it feeds into the board is covered by ProcessRecordsTests.
     @Test func realPsListsThisProcess() throws {
         let table = try PSProcessSource().snapshot()
         #expect(table[getpid()] != nil)
     }
+    #endif
 
     @Test func sessionProcessesWalkTheTreeAndHideDaemons() {
         let naming = Naming(home: "/Users/someone")

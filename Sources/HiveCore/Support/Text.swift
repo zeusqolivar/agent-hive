@@ -94,6 +94,28 @@ enum Text {
         return String(path[path.index(after: slash)...])
     }
 
+    /// The program name at the front of a Windows command line, without its folder.
+    ///
+    /// Command lines there are usually quoted (`"C:\Program Files\…\Claude.exe" --type=renderer`) and use
+    /// backslashes, so neither `basename` nor a split on spaces is right.
+    static func windowsProgramName(_ cmd: String) -> String {
+        let trimmed = cmd.drop(while: { $0 == " " })
+        var program = Substring(trimmed)
+        if let open = trimmed.first, open == "\"",
+           let close = trimmed.dropFirst().firstIndex(of: "\"") {
+            program = trimmed[trimmed.index(after: trimmed.startIndex)..<close]
+        } else if let space = trimmed.firstIndex(of: " ") {
+            program = trimmed[..<space]
+        }
+        return windowsBaseName(String(program))
+    }
+
+    /// `C:\dir\name.exe` -> `name.exe`.
+    static func windowsBaseName(_ path: String) -> String {
+        guard let slash = path.lastIndex(where: { $0 == "\\" || $0 == "/" }) else { return path }
+        return String(path[path.index(after: slash)...])
+    }
+
     /// `os.path.dirname`.
     static func dirname(_ path: String) -> String {
         guard let slash = path.lastIndex(of: "/") else { return "" }

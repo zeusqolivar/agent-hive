@@ -9,7 +9,13 @@ import Testing
 
     @Test func findsLiveClaudeSessionsOnly() throws {
         let home = try Fixture.prepare()
-        let me = getpid(), parent = getppid()
+        let me = getpid()
+        #if os(Windows)
+        // Windows has no getppid(). The test only needs a pid that must not count as a session.
+        let parent: Int32 = 4
+        #else
+        let parent = getppid()
+        #endif
         try write(home, "\(me).json", #"{"pid": \#(me), "sessionId": "sess-live-0001", "status": "busy", "name": "Live"}"#)
         try write(home, "\(parent).json", #"{"pid": \#(parent), "sessionId": "sess-reused-0002", "status": "idle"}"#)
         try write(home, "\(me).feedface.key", #"{"pid": \#(me), "sessionId": "sess-from-key-0003"}"#)
@@ -40,7 +46,11 @@ import Testing
 
     @Test func pidAlive() {
         #expect(SessionReader.pidAlive(getpid()))
+        #if os(Windows)
+        #expect(SessionReader.pidAlive(4))            // System: access denied counts as alive
+        #else
         #expect(SessionReader.pidAlive(1))            // launchd: EPERM counts as alive
+        #endif
         #expect(!SessionReader.pidAlive(999_999))
         #expect(!SessionReader.pidAlive(0))
     }

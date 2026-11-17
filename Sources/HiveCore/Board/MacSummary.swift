@@ -6,11 +6,18 @@ public enum MacSummary {
 
     /// `app_name`: the app a process belongs to, or the program's own name.
     static func appName(_ cmd: String) -> String {
+        if let agent = AgentProcesses.label(cmd) { return agent }
         if cmd.contains("CoreSimulator") { return "iOS Simulator" }
         if cmd.contains("claude-code") || cmd.contains("/.local/bin/claude") { return "Claude Code" }
         if cmd.contains("/Antigravity.app/") { return "Google Antigravity" }
         if cmd.contains("/Gemini.app/") { return "Google Gemini" }
         if let app = Text.firstGroup(appBundle, cmd) { return app }
+        // On Windows there are no app bundles: an Electron app's helpers all name the same executable, so the
+        // program's own file name is the grouping key.
+        if cmd.contains("\\") {
+            let program = Text.windowsProgramName(cmd)
+            return program.isEmpty ? Text.prefix(cmd, 30) : program
+        }
         let first = cmd.components(separatedBy: " ").first ?? ""
         let base = Text.basename(first)
         return base.isEmpty ? Text.prefix(cmd, 30) : base
@@ -39,8 +46,13 @@ public enum MacSummary {
 
     /// The one-minute load average, to one decimal place.
     public static func loadAverage() -> Double {
+        // Windows has no load average. The CPU figure the summary shows still comes from the process list.
+        #if os(Windows)
+        return 0
+        #else
         var loads = [Double](repeating: 0, count: 3)
         guard getloadavg(&loads, 3) > 0 else { return 0 }
         return (loads[0] * 10).rounded(.toNearestOrEven) / 10
+        #endif
     }
 }

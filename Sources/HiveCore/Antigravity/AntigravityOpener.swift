@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationNetworking)
+// On Windows, URLSession and friends live in a separate module.
+import FoundationNetworking
+#endif
 
 /// Runs `open` and `osascript` for the Antigravity action.
 public protocol AppLauncher: Sendable {
@@ -27,7 +31,7 @@ public struct AntigravityOpener: Sendable {
     public init(paths: HivePaths, launcher: AppLauncher = ProcessLauncher(), devtools: DevToolsClient = URLSessionDevTools(),
                 pidAlive: @escaping @Sendable (Int32) -> Bool = SessionReader.pidAlive,
                 pause: @escaping @Sendable (Double) async -> Void = { try? await Task.sleep(for: .seconds($0)) },
-                processes: @escaping @Sendable () -> [Int32: ProcRecord] = { (try? PSProcessSource().snapshot()) ?? [:] }) {
+                processes: @escaping @Sendable () -> [Int32: ProcRecord] = { (try? ProcessSources.system().snapshot()) ?? [:] }) {
         self.paths = paths
         self.launcher = launcher
         self.devtools = devtools
@@ -120,7 +124,7 @@ public struct ProcessLauncher: AppLauncher {
 
 /// The DevTools endpoint over URLSession, with no cache, cookies or proxies.
 public struct URLSessionDevTools: DevToolsClient {
-    static let session: URLSession = {
+    nonisolated(unsafe) static let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 2
         config.connectionProxyDictionary = [:]

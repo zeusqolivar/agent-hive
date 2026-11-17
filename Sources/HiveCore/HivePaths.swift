@@ -101,6 +101,70 @@ public struct HivePaths: Sendable {
 
     /// The signed-in user's real folders.
     public static var current: HivePaths {
-        HivePaths(home: FileManager.default.homeDirectoryForCurrentUser, uid: Int(getuid()))
+        #if os(Windows)
+        return HivePaths.windows(home: FileManager.default.homeDirectoryForCurrentUser,
+                                 appData: windowsAppData, localAppData: windowsLocalAppData,
+                                 temp: FileManager.default.temporaryDirectory)
+        #else
+        return HivePaths(home: FileManager.default.homeDirectoryForCurrentUser, uid: Int(getuid()))
+        #endif
+    }
+
+    #if os(Windows)
+    static var windowsAppData: URL {
+        FileManager.default.homeDirectoryForCurrentUser.appending(path: "AppData/Roaming", directoryHint: .isDirectory)
+    }
+
+    static var windowsLocalAppData: URL {
+        FileManager.default.homeDirectoryForCurrentUser.appending(path: "AppData/Local", directoryHint: .isDirectory)
+    }
+    #endif
+
+    /// The same folders on Windows, where they come from `%USERPROFILE%`, `%APPDATA%`, `%LOCALAPPDATA%` and
+    /// `%TEMP%` rather than from a home folder alone. Takes every folder as a parameter so tests can point it
+    /// at a fixture, and so this stays plain URL building: it runs on both systems.
+    ///
+    /// The paths are the ones `docs/windows/phase-0-findings.md` found on a real PC. `uid` is 0: Windows has no
+    /// `getuid()`, and nothing that depends on it is used there.
+    public static func windows(home: URL,
+                               appData: URL,
+                               localAppData: URL,
+                               temp: URL,
+                               environment: [String: String] = [:]) -> HivePaths {
+        var paths = HivePaths(home: home, uid: 0)
+        paths.claude = home.appending(path: ".claude", directoryHint: .isDirectory)
+        paths.sessions = paths.claude.appending(path: "sessions", directoryHint: .isDirectory)
+        paths.projects = paths.claude.appending(path: "projects", directoryHint: .isDirectory)
+        paths.plugins = paths.claude.appending(path: "plugins", directoryHint: .isDirectory)
+        paths.settings = paths.claude.appending(path: "settings.json", directoryHint: .notDirectory)
+        // The Store app may keep Codex's home under %LOCALAPPDATA%; CODEX_HOME wins when it is set.
+        let codex = environment["CODEX_HOME"].flatMap { $0.isEmpty ? nil : URL(filePath: $0, directoryHint: .isDirectory) }
+            ?? home.appending(path: ".codex", directoryHint: .isDirectory)
+        paths.codexSessions = codex.appending(path: "sessions", directoryHint: .isDirectory)
+        paths.codexConfig = codex.appending(path: "config.toml", directoryHint: .notDirectory)
+        // Claude Code writes background task output to %TEMP%\claude\<hash>\<session>	asks; there is no
+        // /private/tmp/claude-<uid> and no uid, so the root is the folder below %TEMP%.
+        paths.tasksRoot = temp.appending(path: "claude", directoryHint: .isDirectory)
+        paths.openclawPackage = appData.appending(path: "npm/node_modules/openclaw", directoryHint: .isDirectory)
+        paths.openclawDB = home.appending(path: ".openclaw/state/openclaw.sqlite", directoryHint: .notDirectory)
+        paths.openclawFolder = home.appending(path: ".openclaw", directoryHint: .isDirectory)
+        paths.supportFolder = appData.appending(path: "Agent Hive", directoryHint: .isDirectory)
+        paths.classroomFile = paths.supportFolder.appending(path: "classroom.json", directoryHint: .notDirectory)
+        paths.antigravity = home.appending(path: ".gemini/antigravity", directoryHint: .isDirectory)
+        paths.antigravityDB = paths.antigravity.appending(path: "conversation_summaries.db", directoryHint: .notDirectory)
+        paths.antigravityApp = localAppData.appending(path: "Programs/antigravity", directoryHint: .isDirectory)
+        paths.antigravityDevToolsPorts = [
+            appData.appending(path: "Antigravity/DevToolsActivePort", directoryHint: .notDirectory),
+        ]
+        paths.claudeJSON = home.appending(path: ".claude.json", directoryHint: .notDirectory)
+        paths.claudeDesktopConfig = appData.appending(path: "Claude/claude_desktop_config.json",
+                                                      directoryHint: .notDirectory)
+        paths.antigravityMCPConfigs = [
+            (home.appending(path: ".gemini/antigravity/mcp_config.json", directoryHint: .notDirectory), "agent"),
+            (home.appending(path: ".gemini/antigravity-ide/mcp_config.json", directoryHint: .notDirectory), "editor"),
+            (home.appending(path: ".gemini/config/mcp_config.json", directoryHint: .notDirectory), "shared"),
+        ]
+        paths.cursorMCP = home.appending(path: ".cursor/mcp.json", directoryHint: .notDirectory)
+        return paths
     }
 }

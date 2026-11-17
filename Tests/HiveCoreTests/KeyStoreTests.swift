@@ -19,6 +19,8 @@ import Testing
         #expect(throws: KeyStoreError.self) { try MemoryKeyStore().save("  \n", for: "deepseek") }
     }
 
+    #if canImport(Security)
+    // These two need the real Keychain. Windows has Credential Manager instead; its round trip is below.
     /// The only test that touches the real Keychain: a test-only service name, and the item is deleted.
     @Test func keychainRoundTrip() throws {
         let store = KeychainKeyStore(service: "io.github.agenthive.AgentHive.tests-\(UUID().uuidString)")
@@ -37,6 +39,24 @@ import Testing
     @Test func keychainUsesTheAppsServiceByDefault() {
         #expect(KeychainKeyStore().service == "io.github.agenthive.AgentHive.usage")
     }
+    #endif
+
+    #if os(Windows)
+    /// The real Credential Manager, under a throwaway prefix, always cleaned up.
+    @Test func credentialManagerRoundTrip() throws {
+        let store = CredentialManagerKeyStore(prefix: "AgentHive/test/\(UUID().uuidString)")
+        defer { try? store.remove(service: "probe") }
+        #expect(store.key(for: "probe") == nil)
+        try store.save("  not-a-real-key  ", for: "probe")
+        #expect(store.key(for: "probe") == "not-a-real-key")
+        #expect(store.hasKey(for: "probe"))
+        try store.save("replaced", for: "probe")
+        #expect(store.key(for: "probe") == "replaced")
+        try store.remove(service: "probe")
+        #expect(store.key(for: "probe") == nil)
+        try store.remove(service: "probe")  // removing nothing is fine
+    }
+    #endif
 }
 
 @Suite struct HTTPTests {
