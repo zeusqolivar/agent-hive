@@ -17,6 +17,8 @@ public struct HivePaths: Sendable {
     public var tasksRoot: URL
     /// The OpenClaw package installed by Homebrew, for its bundled skills and version.
     public var openclawPackage: URL
+    /// Agent Hive's own folder: the classroom layout, the Claude status line script and limits, usage history.
+    public var supportFolder: URL
     /// The saved classroom arrangement, shared with the browser version's server.py.
     public var classroomFile: URL
     /// Google Antigravity's folder: its conversation database, transcripts (`brain/`) and daemon files.
@@ -51,8 +53,8 @@ public struct HivePaths: Sendable {
         openclawDB = home.appending(path: ".openclaw/state/openclaw.sqlite", directoryHint: .notDirectory)
         tasksRoot = URL(filePath: "/private/tmp/claude-\(uid)", directoryHint: .isDirectory)
         openclawPackage = URL(filePath: "/opt/homebrew/lib/node_modules/openclaw", directoryHint: .isDirectory)
-        classroomFile = home.appending(path: "Library/Application Support/Agent Hive/classroom.json",
-                                       directoryHint: .notDirectory)
+        supportFolder = home.appending(path: "Library/Application Support/Agent Hive", directoryHint: .isDirectory)
+        classroomFile = supportFolder.appending(path: "classroom.json", directoryHint: .notDirectory)
         antigravity = home.appending(path: ".gemini/antigravity", directoryHint: .isDirectory)
         antigravityDB = antigravity.appending(path: "conversation_summaries.db", directoryHint: .notDirectory)
         antigravityApp = URL(filePath: "/Applications/Antigravity.app", directoryHint: .isDirectory)
@@ -72,6 +74,15 @@ public struct HivePaths: Sendable {
         cursorMCP = home.appending(path: ".cursor/mcp.json", directoryHint: .notDirectory)
         openclawFolder = home.appending(path: ".openclaw", directoryHint: .isDirectory)
     }
+
+    /// The opt-in status line script and what it saves.
+    public var statusLineScript: URL { supportFolder.appending(path: "statusline.sh", directoryHint: .notDirectory) }
+    public var statusLinePrevious: URL {
+        supportFolder.appending(path: "statusline-previous.json", directoryHint: .notDirectory)
+    }
+    public var claudeLimitsFile: URL { supportFolder.appending(path: "claude-limits.json", directoryHint: .notDirectory) }
+    /// Balance snapshots for the services that report a balance but no history.
+    public var usageHistoryFile: URL { supportFolder.appending(path: "usage-history.json", directoryHint: .notDirectory) }
 
     /// `brain/<id>/.system_generated`, where Antigravity keeps one conversation's transcript and task logs.
     public func antigravityConversation(_ id: String) -> URL {
