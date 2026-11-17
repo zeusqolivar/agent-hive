@@ -85,13 +85,38 @@
 
   // ---------------------------------------------------------------- the editor on the page
 
-  // env: {room, problem, canvas, save(room) -> Promise<error|null>, reset() -> Promise<error|null>, exit()}
+  // env: {room, problem, canvas, persist(room) -> Promise<error|null>, exit(savedRoom)}. Every change is saved
+  // shortly after it's made (persist(null) goes back to the automatic room), so nothing is lost by leaving.
   let live = null;
   function open(env){
     if(live) return;
     const $ = id => document.getElementById(id), session = createSession(env.room), CAT = RoomModel.CATALOGUE;
     let drag = null, ghost = null, busy = false;
     const off = [];
+    // Saving as you go: the draft as last saved, a pending save, and the room to show once the editor closes.
+    const original = env.room ?? null;
+    let savedText = JSON.stringify(session.draft), timer = null, saved, saving = Promise.resolve(null);
+    const persist = room => {
+      saved = room;
+      saving = saving.then(() => env.persist(room)).then(err => {
+        if(err) say(err, true); else if(live) say(room === null ? "Back to the automatic room" : "Saved");
+        return err;
+      });
+      return saving;
+    };
+    function saveDraft(){
+      timer = null;
+      const v = RoomModel.validate(session.draft);
+      if(!v.ok){ say(v.errors[0] + "; not saved yet", true); return saving; }
+      return persist(JSON.parse(JSON.stringify(session.draft)));
+    }
+    function changed(){
+      const text = JSON.stringify(session.draft);
+      if(text === savedText) return;
+      savedText = text;
+      clearTimeout(timer);
+      timer = setTimeout(saveDraft, 400);
+    }
     const on = (el, type, fn, opts) => { el.addEventListener(type, fn, opts); off.push(() => el.removeEventListener(type, fn, opts)); };
     const say = (text, bad) => { const el = $("edStatus"); el.textContent = text ? text.charAt(0).toUpperCase() + text.slice(1) + (/[.?!]$/.test(text) ? "" : ".") : ""; el.classList.toggle("bad", !!bad); };
     const label = it => `${CAT[it.kind].label} ${it.id}`;
@@ -110,8 +135,11 @@
         box.hidden = false;
         $("edSelName").textContent = label(sel);
         $("edRemove").disabled = sel.kind === "door";
-        $("edSelHint").textContent = sel.kind === "door" ? "Arrow keys move it. The room needs its door, so it can't be removed." : "Arrow keys move it; Delete removes it.";
+        // Arrow keys move in room directions, not screen ones, so the hint says which way is up.
+        const arrows = CAT[sel.kind].zone === "wall" ? "Arrow keys move it along the back wall; up and down move it higher or lower." : "Arrow keys follow the room, not the screen: up moves it toward the back wall, however the room is turned.";
+        $("edSelHint").textContent = sel.kind === "door" ? arrows + " The room needs its door, so it can't be removed." : arrows + " Delete removes it.";
       } else box.hidden = true;
+      changed();
       for(const b of document.querySelectorAll("#roomEditor button, #roomEditor input, #roomEditor select")) if(!["edUndo", "edRemove", "edFloorTheme", "edWallTheme"].includes(b.id)) b.disabled = busy;
     }
     const act = err => { if(err) say(err, true); else say(""); show(); return err; };
@@ -162,16 +190,19 @@
 
     // On the room: click selects, drag moves.
     const itemAt = t => { const d = session.draft; for(let i = d.items.length - 1; i >= 0; i--){ const it = d.items[i], c = CAT[it.kind]; if(c && t.x >= it.x && t.x < it.x + c.w && t.y >= it.y && t.y < it.y + c.h) return it; } return null; };
+    // The item drawn under the pointer: the room's own picking (it knows tall things' shapes) when it has drawn
+    // the draft, otherwise the item whose tiles are under the pointer.
+    const itemUnder = (e, t) => { const id = Room.itemAt?.(e); return id === undefined ? itemAt(t) : session.draft.items.find(i => i.id === id) || null; };
     on(env.canvas, "pointerdown", e => {
       if(busy || e.button !== 0) return;
-      const t = Room.tileAt(e), it = itemAt(t);
+      const t = Room.tileAt(e), it = itemUnder(e, t);
       session.select(it ? it.id : null);
       if(it){ drag = {id:it.id, kind:it.kind, dx:t.x - it.x, dy:t.y - it.y, x0:it.x, y0:it.y}; try { env.canvas.setPointerCapture(e.pointerId); } catch {} }
       say(""); show();
     });
     on(env.canvas, "pointermove", e => {
       if(drag && !drag.fresh){ preview(e); return; }
-      env.canvas.style.cursor = itemAt(Room.tileAt(e)) ? "grab" : "default";
+      env.canvas.style.cursor = itemUnder(e, Room.tileAt(e)) ? "grab" : "default";
     });
     on(env.canvas, "pointerup", () => {
       if(!drag || drag.fresh) return;
@@ -222,43 +253,44 @@
       let text;
       try { text = await f.text(); } catch { say("that file couldn't be read", true); return; }
       const err = session.importJSON(text);
-      if(err) say(err, true); else say(`Loaded ${f.name}. Done saves it`);
+      if(err) say(err, true); else say(`Loaded ${f.name}`);
       show();
     });
-    const run = async (fn, okText) => {
-      busy = true; show();
-      let err;
-      try { err = await fn(); } catch(x){ err = x.message || "that didn't work"; }
-      busy = false;
-      if(err){ say(err, true); show(); return; }
+    on($("edDone"), "click", async () => {
+      if(timer){ clearTimeout(timer); await saveDraft(); } else await saving;
       close();
-      if(okText) env.toast?.(okText);
-    };
-    on($("edDone"), "click", () => {
-      const v = RoomModel.validate(session.draft);
-      if(!v.ok){ say(v.errors[0], true); return; }
-      run(() => env.save(session.draft), "Room saved");
+      env.toast?.("Room saved");
     });
-    on($("edReset"), "click", () => {
-      if(!confirm("Go back to the automatic room? The saved arrangement is deleted, here and in the app.")) return;
-      run(() => env.reset(), "Back to the automatic room");
+    on($("edReset"), "click", async () => {
+      if(!confirm("Go back to the automatic room? Your arrangement is deleted, here and in the app.")) return;
+      clearTimeout(timer); timer = null;
+      const err = await persist(null);
+      if(err) return;
+      close();
+      env.toast?.("Back to the automatic room");
     });
-    on($("edCancel"), "click", () => close());
+    // Puts back the room as it was when the editor opened.
+    on($("edDiscard"), "click", async () => {
+      clearTimeout(timer); timer = null;
+      if(saved !== undefined){ const err = await persist(original); if(err) return; }
+      close();
+    });
 
-    live = {env, off};
-    $("edNote").textContent = env.problem ? `Your saved room couldn't be used (${env.problem}), so this is the automatic room. Done saves over it.` : "";
+    live = {env, off, flush:() => { if(timer){ clearTimeout(timer); saveDraft(); } }, saved:() => saved};
+    $("edNote").textContent = env.problem ? `Your saved room couldn't be used (${env.problem}), so this is the automatic room. Your first change saves over it.` : "";
     $("edNote").hidden = !env.problem;
     say("");
     show();
   }
-  // Leaves edit mode without saving.
+  // Leaves edit mode. A change still waiting to be saved is saved first, so switching views keeps it.
   function close(){
     if(!live) return;
-    const {env, off} = live;
+    const {env, off, flush, saved} = live;
+    flush();
     live = null;
     off.forEach(f => f());
     Room.edit(null);
-    env.exit();
+    env.exit(saved());
   }
 
   const api = {createSession, open, close, isOpen:() => !!live, MAX_BYTES};
