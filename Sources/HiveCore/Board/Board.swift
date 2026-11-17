@@ -30,7 +30,16 @@ final class BoardBuilder: @unchecked Sendable {
     }
 
     func build(capabilities: JSON, replies: ReplyPolicy?) -> BoardState {
+        let trace = ProcessInfo.processInfo.environment["HIVE_DEBUG_TIMING"] != nil
+        func step(_ name: String, _ since: Date) {
+            guard trace else { return }
+            let stamp = ISO8601DateFormatter().string(from: Date())
+            let took = String(format: "%.2f", Date().timeIntervalSince(since))
+            FileHandle.standardError.write(Data("\(stamp)   \(name): \(took)s\n".utf8))
+        }
+        var mark = Date()
         let table = processes.refresh()
+        step("processes", mark); mark = Date()
         var rows: [BoardRow] = []
         var raws: [String: SessionFile] = [:]
         for raw in SessionReader.liveSessions(paths: paths, processes: table) {
@@ -39,12 +48,15 @@ final class BoardBuilder: @unchecked Sendable {
             rows.append(row)
             raws[row.id] = raw
         }
+        step("claude sessions", mark); mark = Date()
         // Google Antigravity's conversations, unless a Claude session has the same id.
         for (row, raw) in antigravity.sessions(table) where raws[row.id] == nil {
             rows.append(row)
             raws[row.id] = raw
         }
+        step("antigravity", mark); mark = Date()
         rows += ended.rows(excluding: Set(raws.keys))
+        step("ended", mark)
         let order = ["needs": 0, "working": 1, "idle": 2, "ended": 3]
         let reasonOrder = ["permission": 0, "plan": 0, "question": 1]
         rows = rows.stableSorted { a, b in

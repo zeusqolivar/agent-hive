@@ -15,6 +15,9 @@ import PackageDescription
 //   CWinProcess NtQueryInformationProcess(ProcessCommandLineInformation), which WinSDK does not expose.
 var products: [Product] = [
     .library(name: "HiveCore", targets: ["HiveCore"]),
+    // The headless helper the Windows shell talks to (phase 2). It builds on macOS too, which is how the
+    // protocol's tests and a `--dump` comparison run there.
+    .executable(name: "hive-core", targets: ["HiveCoreHelper"]),
 ]
 var targets: [Target] = [
     .target(
@@ -29,6 +32,7 @@ var targets: [Target] = [
     .target(name: "CSQLite", path: "Sources/CSQLite"),
     .target(name: "CWinProcess", path: "Sources/CWinProcess",
             linkerSettings: [.linkedLibrary("ntdll")]),
+    .executableTarget(name: "HiveCoreHelper", dependencies: ["HiveCore"]),
     .testTarget(
         name: "HiveCoreTests",
         dependencies: [
