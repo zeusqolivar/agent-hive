@@ -28,7 +28,9 @@ import Testing
         try store.save("not-a-real-key-1", for: account)
         try store.save("not-a-real-key-2", for: account)
         #expect(store.key(for: account) == "not-a-real-key-2")
+        #expect(store.hasKey(for: account))
         try store.remove(service: account)
+        #expect(!store.hasKey(for: account))
         #expect(store.key(for: account) == nil)
     }
 

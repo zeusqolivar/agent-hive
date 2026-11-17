@@ -5,8 +5,14 @@ import Security
 /// logged or included in any page JSON.
 public protocol KeyStore: Sendable {
     func key(for service: String) -> String?
+    /// Whether a key is saved, without reading it (reading a Keychain item's data can ask the user).
+    func hasKey(for service: String) -> Bool
     func save(_ key: String, for service: String) throws
     func remove(service: String) throws
+}
+
+extension KeyStore {
+    public func hasKey(for service: String) -> Bool { key(for: service) != nil }
 }
 
 public enum KeyStoreError: Error, Equatable, Sendable {
@@ -39,6 +45,14 @@ public struct KeychainKeyStore: KeyStore {
         guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let data = out as? Data,
               let key = String(data: data, encoding: .utf8), !key.isEmpty else { return nil }
         return key
+    }
+
+    public func hasKey(for account: String) -> Bool {
+        var q = query(account)
+        q[kSecReturnAttributes as String] = true
+        q[kSecMatchLimit as String] = kSecMatchLimitOne
+        var out: CFTypeRef?
+        return SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess
     }
 
     public func save(_ key: String, for account: String) throws {

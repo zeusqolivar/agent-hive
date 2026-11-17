@@ -40,6 +40,14 @@ final class AppModel {
     var route: String?
     var loginError: String?
 
+    /// The menu bar's limits line: the Claude weekly window and the lowest balance.
+    var usageSummary: String?
+    /// Which usage services have a key in the Keychain (never the keys themselves).
+    var savedKeys: Set<String> = []
+    var keyErrors: [String: String] = [:]
+    var statusLineInstalled = false
+    var statusLineError: String?
+
     var showMenuBarIcon: Bool {
         didSet { defaults.set(showMenuBarIcon, forKey: Keys.menuBar) }
     }
@@ -90,7 +98,56 @@ final class AppModel {
         startAtLogin = status == .enabled || status == .requiresApproval
         applyKeepAwake()
         // Follow the board from launch, so "while agents are working" works even before a window opens.
-        Task { @MainActor [weak self] in self?.follow(Services.shared.board) }
+        Task { @MainActor [weak self] in
+            self?.follow(Services.shared.board)
+            await self?.refreshUsageState()
+        }
+    }
+
+    // MARK: - Usage services
+
+    var limits: LimitsService { Services.shared.limits }
+
+    /// Re-reads which keys are saved, whether the status line is set up, and the menu bar line.
+    func refreshUsageState() async {
+        var saved = Set<String>()
+        for provider in UsageProviders.all where await limits.hasKey(for: provider.id) { saved.insert(provider.id) }
+        savedKeys = saved
+        statusLineInstalled = StatusLineInstaller(paths: Services.shared.paths).isInstalled
+        usageSummary = await limits.summary()
+    }
+
+    /// Saves a key to the Keychain and checks that service with it.
+    func saveKey(_ key: String, for service: String) async {
+        keyErrors[service] = nil
+        do {
+            try await limits.saveKey(key, for: service)
+        } catch {
+            keyErrors[service] = "Couldn't save the key to the Keychain."
+        }
+        await refreshUsageState()
+    }
+
+    func removeKey(for service: String) async {
+        keyErrors[service] = nil
+        do {
+            try await limits.removeKey(for: service)
+        } catch {
+            keyErrors[service] = "Couldn't remove the key from the Keychain."
+        }
+        await refreshUsageState()
+    }
+
+    func setStatusLine(installed: Bool) async {
+        statusLineError = nil
+        do {
+            try await limits.claude(action: installed ? "install" : "remove")
+        } catch StatusLineError.unreadableSettings {
+            statusLineError = "~/.claude/settings.json isn't valid JSON, so Agent Hive left it alone."
+        } catch {
+            statusLineError = "Couldn't change the Claude status line."
+        }
+        await refreshUsageState()
     }
 
     /// Holds or releases the Mac's sleep, and switches the one-hour mode off once it runs out.
@@ -110,7 +167,10 @@ final class AppModel {
     func follow(_ board: Board) {
         guard polling == nil else { return }
         polling = Task { [weak self] in
+            var tick = 0
             while !Task.isCancelled {
+                if tick % 15 == 0 { await self?.refreshUsageState() }
+                tick += 1
                 let state = await board.snapshot()
                 let needs = state.rows.filter { $0.group == "needs" }
                 self?.needsYou = needs.count

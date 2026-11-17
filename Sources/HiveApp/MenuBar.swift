@@ -33,6 +33,10 @@ struct MenuBarMenu: View {
                 Button("\(session.name): \(session.headline)") { show("#/agents/\(session.id)") }
             }
         }
+        if let summary = model.usageSummary {
+            Divider()
+            Button(summary) { show("#/usage") }
+        }
         Divider()
         Picker(model.keepingAwake ? "Keeping Mac awake" : "Keep Mac awake", selection: $model.keepAwakeMode) {
             ForEach(KeepAwakeMode.allCases, id: \.self) { mode in

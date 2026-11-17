@@ -117,7 +117,7 @@ public actor LimitsService {
 
     // MARK: - Keys
 
-    public func hasKey(for service: String) -> Bool { keys.key(for: service) != nil }
+    public func hasKey(for service: String) -> Bool { keys.hasKey(for: service) }
 
     /// Saves a key, forgets what the old key found, and checks the service with the new one.
     public func saveKey(_ key: String, for service: String) async throws {
@@ -159,7 +159,7 @@ public actor LimitsService {
         let state = states[id] ?? State()
         var kind = provider.kind
         if case .cost = state.good { kind = "cost" } else if case .balance = state.good { kind = "balance" }
-        guard keys.key(for: id) != nil else {
+        guard keys.hasKey(for: id) else {
             return PlanCards.card(id: id, title: title, kind: kind, state: "not-set-up",
                                   message: "Add \(provider.keyKind == "Admin key" ? "an" : "a") \(provider.keyKind) in Settings.")
         }
@@ -200,7 +200,7 @@ public actor LimitsService {
         }
         var lowest: (title: String, amount: Double, currency: String)?
         for provider in providers {
-            guard keys.key(for: provider.id) != nil,
+            guard keys.hasKey(for: provider.id),
                   case .balance(let amount?, let currency, _) = states[provider.id]?.good else { continue }
             if lowest == nil || amount < lowest!.amount { lowest = (provider.title, amount, currency) }
         }
