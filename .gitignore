@@ -12,3 +12,10 @@ p*-test.txt
 p*-one.txt
 v-*.json
 v.err
+
+# The Windows shell's build output and fetched tooling.
+windows/src-tauri/target/
+windows/node_modules/
+windows/src-tauri/gen/
+windows/src-tauri/binaries/*.exe
+!windows/src-tauri/binaries/.gitkeep

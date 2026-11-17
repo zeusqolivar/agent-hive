@@ -1,0 +1,14 @@
+{
+  "name": "agent-hive-shell",
+  "private": true,
+  "version": "0.3.2",
+  "description": "The Windows shell for Agent Hive: the existing pages, in a WebView2 window, fed by hive-core.exe.",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
