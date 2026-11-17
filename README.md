@@ -31,9 +31,10 @@ unless you add an API key for a usage service, which it sends only to that servi
 | **Connectors** | Each agent's MCP connectors (Claude Code, the Claude app, Antigravity, Codex, Cursor, OpenClaw): name, local or web, where it's set up, and the server's host name. Commands, settings, addresses and keys aren't shown. |
 | **System** | Other agent apps that are running, OpenClaw tasks and schedules, and what is keeping your Mac busy. |
 
-A menu bar icon shows how many sessions need you. Click it for a panel with your plan limits as bars, API-key
-balances and spending, the sessions that need you and those working, and **Keep Mac awake**; click a session to
-open it. **Open in Claude** jumps straight to a session in the Claude app.
+A menu bar icon shows how many sessions need you and the percentage of your most-pressed plan window, so the limit
+is visible without opening anything. Click it for a panel with your plan limits as bars, API-key balances and
+spending, the sessions that need you and those working, and **Keep Mac awake**; click a session to open it.
+**Open in Claude** jumps straight to a session in the Claude app.
 
 <img src="docs/menubar.png" width="400" alt="The menu bar panel, with sample data: Claude and Codex plan limits as bars, DeepSeek and OpenAI amounts, two sessions that need you and two working">
 

@@ -105,3 +105,26 @@ public struct UsageGlance: Sendable, Equatable, Identifiable {
         return rows
     }
 }
+
+public extension UsageGlance {
+    /// The highest meter percentage this row reports, or nil for rows that aren't plan windows.
+    var peakUsed: Double? {
+        guard case .meters(let meters) = body else { return nil }
+        return meters.map(\.used).max()
+    }
+
+    /// How pressed a source is: blue under 75%, orange from 75%, red from 90%. The menu bar badge and the
+    /// panel's meter bars use the same thresholds, so the two always agree.
+    static func tier(_ used: Double) -> UsageTier {
+        used >= 90 ? .critical : used >= 75 ? .high : .normal
+    }
+}
+
+public enum UsageTier: Sendable, Equatable {
+    case normal, high, critical
+}
+
+public extension Array where Element == UsageGlance {
+    /// The most-pressed plan meter across every source — what the menu bar badge shows at a glance.
+    var peakUsed: Double? { compactMap(\.peakUsed).max() }
+}

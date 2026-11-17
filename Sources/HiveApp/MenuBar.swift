@@ -2,19 +2,84 @@ import HiveCore
 import AppKit
 import SwiftUI
 
-/// The menu bar extra: a hexagon with the number of sessions that need you.
+/// The menu bar extra: a hexagon with the number of sessions that need you, and a colour-coded usage badge
+/// that fills in proportion to the most-pressed plan window (blue → orange at 75% → red at 90%).
 struct MenuBarLabel: View {
     let model: AppModel
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 4) {
             Image(systemName: model.needsYou > 0 ? "hexagon.fill" : "hexagon")
+            if let used = model.usage.peakUsed {
+                Text(usageText(used)).monospacedDigit().font(.caption)
+            }
             if model.needsYou > 0 { Text("\(model.needsYou)").monospacedDigit() }
             if model.keepingAwake { Image(systemName: "cup.and.saucer.fill") }
         }
-        .accessibilityLabel((model.needsYou == 1 ? "Agent Hive, 1 session needs you"
-                             : "Agent Hive, \(model.needsYou) sessions need you")
-                            + (model.keepingAwake ? ", keeping the Mac awake" : ""))
+        .accessibilityLabel(accessibilityText)
+    }
+
+    /// The percentage, coloured by how close the plan is to its limit. An attributed string, because the
+    /// menu bar tints plain Text and plain Images monochrome and drops custom images entirely.
+    private func usageText(_ used: Double) -> AttributedString {
+        var text = AttributedString("\(Int(used.rounded()))%")
+        text.foregroundColor = UsageBadge.tint(UsageGlance.tier(used))
+        return text
+    }
+
+    private var accessibilityText: String {
+        var parts = [model.needsYou == 1 ? "Agent Hive, 1 session needs you"
+                                         : "Agent Hive, \(model.needsYou) sessions need you"]
+        if let used = model.usage.peakUsed { parts.append("\(Int(used.rounded())) percent of your highest plan limit used") }
+        if model.keepingAwake { parts.append("keeping the Mac awake") }
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// The menu bar's usage badge: a capsule track with a coloured fill. Drawn as a non-template image, because
+/// the system tints template images monochrome and the whole point is that the colour carries the warning.
+enum UsageBadge {
+    static func tint(_ tier: UsageTier) -> Color {
+        switch tier {
+        case .normal: .blue
+        case .high: .orange
+        case .critical: .red
+        }
+    }
+
+    static func color(for tier: UsageTier) -> NSColor {
+        switch tier {
+        case .normal: .systemBlue
+        case .high: .systemOrange
+        case .critical: .systemRed
+        }
+    }
+
+    static func image(used: Double, tier: UsageTier) -> NSImage {
+        let size = NSSize(width: 24, height: 11), barHeight: CGFloat = 6, scale: CGFloat = 2
+        // A real bitmap, not a lazy drawingHandler: the menu bar's snapshot does not reliably invoke the
+        // handler, and the badge then renders as nothing at all.
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil,
+                                   pixelsWide: Int(size.width * scale), pixelsHigh: Int(size.height * scale),
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        rep.size = size
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        let bar = NSRect(x: 0, y: (size.height - barHeight) / 2, width: size.width, height: barHeight)
+        NSColor.secondaryLabelColor.withAlphaComponent(0.4).setFill()
+        NSBezierPath(roundedRect: bar, xRadius: barHeight / 2, yRadius: barHeight / 2).fill()
+
+        let fraction = max(0.12, min(1, used / 100))
+        let filled = NSRect(x: 0, y: bar.minY, width: max(barHeight, size.width * fraction), height: barHeight)
+        color(for: tier).setFill()
+        NSBezierPath(roundedRect: filled, xRadius: barHeight / 2, yRadius: barHeight / 2).fill()
+        NSGraphicsContext.restoreGraphicsState()
+
+        let image = NSImage(size: size)
+        image.addRepresentation(rep)
+        image.isTemplate = false
+        return image
     }
 }
 
@@ -37,16 +102,16 @@ struct MenuBarPanel: View {
             Divider()
             footer
         }
-        .frame(width: 400)
+        .frame(width: 340)
         .task { if model.live { await model.refreshUsageState() } }
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 12) {
             usage
             sessions
         }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -64,8 +129,8 @@ struct MenuBarPanel: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     private var statusLine: String {
@@ -130,7 +195,7 @@ struct MenuBarPanel: View {
             .help("Check now")
             .accessibilityLabel("Check usage now")
         }) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(model.usage) { row in
                     UsageRow(row: row) { action in
                         switch action {
@@ -165,8 +230,8 @@ struct MenuBarPanel: View {
             .pickerStyle(.menu)
             .fixedSize()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 
     private var footer: some View {
@@ -185,8 +250,8 @@ struct MenuBarPanel: View {
                 .keyboardShortcut("q")
         }
         .buttonStyle(.borderless)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     // MARK: Helpers
@@ -280,7 +345,7 @@ private struct UsageRow: View {
                     title.font(.subheadline).foregroundStyle(.secondary)
                     if let top = meters.max(by: { $0.used < $1.used }) {
                         Text("\(Int(top.used.rounded()))% of your \(Self.limitName(top.label)) used.")
-                            .font(.title3.weight(.medium))
+                            .font(.headline)
                     }
                 }
                 Divider()
@@ -293,7 +358,7 @@ private struct UsageRow: View {
                     Text(caption).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(amount).font(.title3.weight(.medium)).monospacedDigit()
+                Text(amount).font(.headline).monospacedDigit()
             }
         case .note(let note):
             HStack(alignment: .firstTextBaseline) {
@@ -351,7 +416,7 @@ private struct MeterRow: View {
                     Text("Resets \(Self.when(resets))").font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            .frame(width: 150, alignment: .leading)
+            .frame(width: 104, alignment: .leading)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.primary.opacity(0.12))
@@ -360,10 +425,10 @@ private struct MeterRow: View {
             }
             .frame(height: 5)
             Text("\(Int(meter.used.rounded()))% used")
-                .font(.callout)
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-                .frame(width: 72, alignment: .trailing)
+                .frame(width: 60, alignment: .trailing)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(meter.label), \(Int(meter.used.rounded())) percent used")

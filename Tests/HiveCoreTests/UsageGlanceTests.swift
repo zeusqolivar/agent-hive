@@ -14,6 +14,27 @@ import Testing
         return .object(o)
     }
 
+    static func window(_ label: String, _ used: Double) -> JSON {
+        var w = JSONObject()
+        w["label"] = JSON.string(label)
+        w["usedPercent"] = JSON.double(used)
+        return .object(w)
+    }
+
+    @Test func menuBarBadgeUsesTheMostPressedMeter() {
+        let cards: JSON = ["cards": .array([
+            Self.card("claude", "Claude plan", "ok", windows: [Self.window("Weekly", 51), Self.window("Session", 12)]),
+            Self.card("codex", "Codex plan", "ok", windows: [Self.window("Weekly", 76)]),
+            Self.card("antigravity", "Antigravity", "unavailable"),
+        ])]
+        let rows = UsageGlance.from(cards)
+        #expect(rows[0].peakUsed == 51)
+        #expect(rows.peakUsed == 76)
+        #expect(UsageGlance.tier(10) == .normal)
+        #expect(UsageGlance.tier(75) == .high)
+        #expect(UsageGlance.tier(90) == .critical)
+    }
+
     @Test func everyPlanShowsEvenWithNoNumbers() {
         let cards: JSON = ["cards": .array([
             Self.card("claude", "Claude plan", "not-set-up"),
