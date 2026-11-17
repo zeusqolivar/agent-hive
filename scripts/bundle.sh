@@ -19,6 +19,8 @@ cp "$bin/HiveApp" "$app/Contents/MacOS/HiveApp"
 cp Sources/HiveApp/Info.plist "$app/Contents/Info.plist"
 # The web pages, served to the window by the app's scheme handler.
 cp -R Sources/HiveApp/Resources/web "$app/Contents/Resources/web"
+# The Dock and Finder icon, made by scripts/make_icon.swift and named by CFBundleIconFile.
+cp Sources/HiveApp/Resources/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 
 codesign --force --sign - --timestamp=none "$app"
 echo "$root/$app"

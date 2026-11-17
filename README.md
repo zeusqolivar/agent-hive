@@ -1,3 +1,5 @@
+<img src="docs/icon.png" width="128" height="128" alt="Agent Hive icon: a hexagon face in honey on navy">
+
 # Agent Hive
 
 A Mac app that shows every AI coding agent session on your Mac in one place: which ones need you, what each
@@ -122,6 +124,7 @@ from the Claude app's. Details: [docs/spikes/S1-reply.md](docs/spikes/S1-reply.m
 | `Sources/HiveApp` | The window, menu bar icon, settings, the `hive://` scheme handler, and native actions |
 | `Sources/HiveApp/Resources/web` | The pages (plain HTML, CSS and JavaScript) |
 | `Tests/HiveCoreTests` | Unit and contract tests. `Fixtures/home` is a made-up home folder, and `Fixtures/expected` holds the expected JSON for it |
+| `scripts/make_icon.swift` | Draws the app icon and writes `Sources/HiveApp/Resources/AppIcon.icns` and `docs/icon.png` (run from the repository root) |
 | `docs/spikes` | Investigations into replying to sessions and reading plan usage |
 
 There's no server and no open port: the pages ask `hive://app/api/...`, and the app answers in Swift.

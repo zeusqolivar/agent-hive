@@ -13,7 +13,7 @@ let package = Package(
         .executableTarget(
             name: "HiveApp",
             dependencies: ["HiveCore"],
-            exclude: ["Info.plist"],
+            exclude: ["Info.plist", "Resources/AppIcon.icns"],
             resources: [.copy("Resources/web")]
         ),
         .testTarget(

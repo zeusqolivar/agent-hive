@@ -8,6 +8,8 @@
 	<string>Agent Hive</string>
 	<key>CFBundleExecutable</key>
 	<string>HiveApp</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>io.github.agenthive.AgentHive</string>
 	<key>CFBundleInfoDictionaryVersion</key>
