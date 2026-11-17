@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "plugins": {
+    "notes-plugin@demo-market": [
+      {"scope": "user", "installPath": "__HOME__/.claude/plugins/cache/demo-market/notes-plugin/1.0.0", "version": "1.0.0"}
+    ],
+    "missing-plugin@demo-market": [
+      {"scope": "user", "installPath": "__HOME__/.claude/plugins/cache/demo-market/missing-plugin/0.1.0", "version": "0.1.0"}
+    ]
+  }
+}

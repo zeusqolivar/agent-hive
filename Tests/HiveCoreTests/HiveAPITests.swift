@@ -18,14 +18,15 @@ final class RecordingActions: ActionHandler, @unchecked Sendable {
 
 @Suite struct HiveAPITests {
     static func api(actions: RecordingActions = RecordingActions(), web: URL? = nil,
-                    classroom: ClassroomStore? = nil) async throws -> HiveAPI {
+                    classroom: ClassroomStore? = nil, connectors: ConnectorsReader? = nil) async throws -> HiveAPI {
         let (paths, procs) = try BoardTests.liveHome()
         let board = Board(paths: paths, processes: procs, now: { Fixture.nowDate })
         await board.refresh()
         let usage = UsageCounter(paths: paths, now: { Fixture.nowDate })
         return HiveAPI(board: board, usage: usage, skills: SkillsReader(paths: paths),
                        jobs: SkillsJobs(paths: paths, runner: FakeRunner()), system: SystemReport(paths: paths),
-                       classroom: classroom ?? ClassroomStore(paths: paths), actions: actions, pages: web)
+                       classroom: classroom ?? ClassroomStore(paths: paths), actions: actions, pages: web,
+                       connectors: connectors)
     }
 
     static func post(_ api: HiveAPI, _ path: String, _ body: String) async -> (Int, JSON?) {
@@ -62,6 +63,16 @@ final class RecordingActions: ActionHandler, @unchecked Sendable {
         #expect(skills["plugins"]?.array != nil)
         let health = await api.handle(method: "GET", path: "/healthz", body: nil)
         #expect(String(decoding: health.body, as: UTF8.self) == "ok")
+    }
+
+    @Test func connectorsRoute() async throws {
+        let reader = ConnectorsReader(paths: HivePaths(home: ConnectorsTests.home, uid: 501))
+        let r = await (try Self.api(connectors: reader)).handle(method: "GET", path: "/api/connectors", body: nil)
+        #expect(r.status == 200)
+        let body = try JSON.parse(r.body)
+        #expect(body["agents"]?.array?.count == 6)
+        #expect(!String(decoding: r.body, as: UTF8.self).contains("SECRET"))
+        #expect(await (try Self.api()).handle(method: "GET", path: "/api/connectors", body: nil).status == 404)
     }
 
     @Test func actionForASessionNotOnTheBoardRunsNothing() async throws {

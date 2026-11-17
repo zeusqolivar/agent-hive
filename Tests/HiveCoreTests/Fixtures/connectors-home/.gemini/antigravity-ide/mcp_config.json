@@ -1,0 +1,1 @@
+{"mcpServers": {"db": {"type": "http", "url": "https://db.example.io/mcp", "headers": {"Authorization": "Bearer SECRET-HEADER-CCCC"}}}}

@@ -1,0 +1,1 @@
+{"mcpServers": {"design": {"serverUrl": "https://design.example.net/mcp?token=SECRET-QUERY-BBBB"}, "helper": {"command": "helper-mcp", "disabled": true}}}

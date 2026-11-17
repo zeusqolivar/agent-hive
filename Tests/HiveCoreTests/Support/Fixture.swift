@@ -24,13 +24,13 @@ enum Fixture {
     }
 
     /// A private prepared copy for tests that add or change files.
-    static func prepare() throws -> URL {
+    static func prepare(_ name: String = "home") throws -> URL {
         let fm = FileManager.default
         let tmp = fm.temporaryDirectory.resolvingSymlinksInPath()
             .appending(path: "hive-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
         let home = tmp.appending(path: "home", directoryHint: .isDirectory)
         try fm.createDirectory(at: tmp, withIntermediateDirectories: true)
-        try fm.copyItem(at: root.appending(path: "home"), to: home)
+        try fm.copyItem(at: root.appending(path: name), to: home)
         let stamp = Date(timeIntervalSince1970: TimeInterval(now - 60))
         let enumerator = fm.enumerator(at: home, includingPropertiesForKeys: [.isRegularFileKey])!
         for case let url as URL in enumerator {

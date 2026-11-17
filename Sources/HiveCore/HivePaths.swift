@@ -26,6 +26,18 @@ public struct HivePaths: Sendable {
     public var antigravityApp: URL
     /// Where the running Antigravity window writes its DevTools port, in the order server.py looks.
     public var antigravityDevToolsPorts: [URL]
+    /// Claude Code's main config: user and per-project MCP servers.
+    public var claudeJSON: URL
+    /// The Claude desktop app's MCP config.
+    public var claudeDesktopConfig: URL
+    /// Antigravity's MCP configs, with the scope each is shown under.
+    public var antigravityMCPConfigs: [(url: URL, scope: String)]
+    /// Codex's config, for its `[mcp_servers.<name>]` tables.
+    public var codexConfig: URL
+    /// Cursor's MCP config.
+    public var cursorMCP: URL
+    /// OpenClaw's folder, whose top-level JSON files may list MCP servers.
+    public var openclawFolder: URL
 
     public init(home: URL, uid: Int) {
         self.home = home
@@ -48,6 +60,17 @@ public struct HivePaths: Sendable {
             home.appending(path: "Library/Application Support/Antigravity/DevToolsActivePort", directoryHint: .notDirectory),
             home.appending(path: ".config/Antigravity/DevToolsActivePort", directoryHint: .notDirectory),
         ]
+        claudeJSON = home.appending(path: ".claude.json", directoryHint: .notDirectory)
+        claudeDesktopConfig = home.appending(path: "Library/Application Support/Claude/claude_desktop_config.json",
+                                             directoryHint: .notDirectory)
+        antigravityMCPConfigs = [
+            (home.appending(path: ".gemini/antigravity/mcp_config.json", directoryHint: .notDirectory), "agent"),
+            (home.appending(path: ".gemini/antigravity-ide/mcp_config.json", directoryHint: .notDirectory), "editor"),
+            (home.appending(path: ".gemini/config/mcp_config.json", directoryHint: .notDirectory), "shared"),
+        ]
+        codexConfig = home.appending(path: ".codex/config.toml", directoryHint: .notDirectory)
+        cursorMCP = home.appending(path: ".cursor/mcp.json", directoryHint: .notDirectory)
+        openclawFolder = home.appending(path: ".openclaw", directoryHint: .isDirectory)
     }
 
     /// `brain/<id>/.system_generated`, where Antigravity keeps one conversation's transcript and task logs.

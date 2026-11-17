@@ -1,0 +1,22 @@
+{
+  "numStartups": 3,
+  "mcpServers": {
+    "local-notes": {"type": "stdio", "command": "/opt/tools/notes-mcp", "args": ["--token", "SECRET-ARG-1111"], "env": {"NOTES_KEY": "SECRET-ENV-2222"}},
+    "weather": {"type": "http", "url": "https://SECRET-USER-3333:SECRET-PASS-3333@api.weather.example/mcp?key=SECRET-QUERY-4444", "headers": {"Authorization": "Bearer SECRET-HEADER-5555"}},
+    "events": {"url": "https://events.example.com/sse", "disabled": true}
+  },
+  "projects": {
+    "__HOME__/code/sample-app": {
+      "mcpServers": {
+        "builder": {"command": "npx", "args": ["-y", "builder-mcp@latest"], "env": {"BUILDER_TOKEN": "SECRET-ENV-6666"}}
+      },
+      "disabledMcpServers": ["builder"]
+    },
+    "/srv/shared/tools": {
+      "mcpServers": {
+        "docs": {"type": "sse", "url": "https://docs.example.org/sse?session=SECRET-QUERY-7777"}
+      }
+    },
+    "__HOME__/code/empty": {"mcpServers": {}}
+  }
+}

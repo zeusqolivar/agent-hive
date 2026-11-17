@@ -1,0 +1,1 @@
+{"preferences": {"theme": "dark"}, "mcpServers": {"files": {"command": "files-mcp", "args": ["/data/private"], "env": {"FILES_SECRET": "SECRET-ENV-AAAA"}}}}

@@ -1,0 +1,1 @@
+{"mcpServers": {"notes-cloud": {"type": "http", "url": "https://mcp.notes.example/v1", "headers": {"X-Api-Key": "SECRET-HEADER-8888"}}}}

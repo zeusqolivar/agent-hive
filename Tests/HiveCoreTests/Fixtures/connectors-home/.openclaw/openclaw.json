@@ -1,0 +1,1 @@
+{"gateway": {"port": 1}, "mcpServers": {"memory": {"command": "memory-mcp", "env": {"MEMORY_KEY": "SECRET-ENV-HHHH"}}}}

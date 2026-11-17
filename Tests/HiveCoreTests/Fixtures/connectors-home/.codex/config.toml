@@ -1,0 +1,16 @@
+model = "gpt-test"
+
+[mcp_servers.search]
+command = "search-mcp"
+args = ["--key", "SECRET-ARG-DDDD"]
+
+[mcp_servers.search.env]
+SEARCH_TOKEN = "SECRET-ENV-EEEE"
+
+[mcp_servers."remote-tools"]
+url = "https://tools.example.dev/mcp?auth=SECRET-QUERY-FFFF"
+bearer_token_env_var = "TOOLS_TOKEN"
+enabled = false
+
+[profiles.fast]
+model = "gpt-mini"

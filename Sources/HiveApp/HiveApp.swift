@@ -22,7 +22,7 @@ final class Services: Sendable {
         let jobs = SkillsJobs(paths: paths, onFinish: { skills.invalidate() })
         api = HiveAPI(board: board, usage: usage, skills: skills, jobs: jobs, system: SystemReport(paths: paths),
                       classroom: ClassroomStore(paths: paths), actions: WorkspaceActions(), pages: Self.webFolder(),
-                      replies: replies)
+                      replies: replies, connectors: ConnectorsReader(paths: paths))
         guard start else { return }
         let board = self.board, usage = self.usage
         Task {

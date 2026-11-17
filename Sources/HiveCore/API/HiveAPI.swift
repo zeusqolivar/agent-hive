@@ -35,9 +35,11 @@ public struct HiveAPI: Sendable {
     let actions: ActionHandler
     let pages: URL?
     let replies: ReplyHandler?
+    let connectors: ConnectorsReader?
 
     public init(board: Board, usage: UsageCounter, skills: SkillsReader, jobs: SkillsJobs, system: SystemReport,
-                classroom: ClassroomStore, actions: ActionHandler, pages: URL? = nil, replies: ReplyHandler? = nil) {
+                classroom: ClassroomStore, actions: ActionHandler, pages: URL? = nil, replies: ReplyHandler? = nil,
+                connectors: ConnectorsReader? = nil) {
         self.board = board
         self.usage = usage
         self.skills = skills
@@ -47,6 +49,7 @@ public struct HiveAPI: Sendable {
         self.actions = actions
         self.pages = pages
         self.replies = replies
+        self.connectors = connectors
     }
 
     static func reply(_ status: Int, _ body: JSON) -> Response {
@@ -70,7 +73,7 @@ public struct HiveAPI: Sendable {
     }
 
     private func get(_ path: String) async -> Response {
-        if path.hasPrefix("/api/"), path != "/api/board", path != "/api/classroom" { await board.waitUntilReady() }
+        if path.hasPrefix("/api/"), !["/api/board", "/api/classroom", "/api/connectors"].contains(path) { await board.waitUntilReady() }
         switch path {
         case "/healthz":
             return Response(status: 200, contentType: "text/plain", body: Data("ok".utf8))
@@ -89,6 +92,9 @@ public struct HiveAPI: Sendable {
             return Self.reply(200, .object(o))
         case "/api/classroom":
             return Self.reply(200, ["room": classroom.load()])
+        case "/api/connectors":
+            guard let connectors else { return Self.error(404, "Not found") }
+            return Self.reply(200, connectors.report())
         default:
             break
         }
