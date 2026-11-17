@@ -5,3 +5,4 @@ build/
 DerivedData/
 .superpowers/
 .DS_Store
+/Info.plist
