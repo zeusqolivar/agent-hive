@@ -40,6 +40,8 @@ public struct HivePaths: Sendable {
     public var cursorMCP: URL
     /// OpenClaw's folder, whose top-level JSON files may list MCP servers.
     public var openclawFolder: URL
+    /// Hermes Agent's databases, newest location first: its sessions and messages live in `state.db`.
+    public var hermesDBs: [URL]
 
     public init(home: URL, uid: Int) {
         self.home = home
@@ -73,6 +75,10 @@ public struct HivePaths: Sendable {
         codexConfig = home.appending(path: ".codex/config.toml", directoryHint: .notDirectory)
         cursorMCP = home.appending(path: ".cursor/mcp.json", directoryHint: .notDirectory)
         openclawFolder = home.appending(path: ".openclaw", directoryHint: .isDirectory)
+        hermesDBs = [
+            home.appending(path: "Library/Application Support/hermes/state.db", directoryHint: .notDirectory),
+            home.appending(path: ".hermes/state.db", directoryHint: .notDirectory),
+        ]
     }
 
     /// The opt-in status line script and what it saves.
@@ -165,6 +171,11 @@ public struct HivePaths: Sendable {
             (home.appending(path: ".gemini/config/mcp_config.json", directoryHint: .notDirectory), "shared"),
         ]
         paths.cursorMCP = home.appending(path: ".cursor/mcp.json", directoryHint: .notDirectory)
+        // Hermes Agent keeps its state under %LOCALAPPDATA%\hermes on Windows.
+        paths.hermesDBs = [
+            localAppData.appending(path: "hermes/state.db", directoryHint: .notDirectory),
+            appData.appending(path: "hermes/state.db", directoryHint: .notDirectory),
+        ]
         return paths
     }
 }
