@@ -1,0 +1,15 @@
+{
+  "data": [
+    {"starting_at": "2026-11-01T00:00:00Z", "ending_at": "2026-11-02T00:00:00Z", "results": [
+      {"amount": "250.00", "context_window": null, "cost_type": null, "currency": "USD", "description": null,
+       "inference_geo": null, "model": null, "service_tier": null, "speed": null, "token_type": null, "workspace_id": null}
+    ]},
+    {"starting_at": "2026-11-16T00:00:00Z", "ending_at": "2026-11-17T00:00:00Z", "results": [
+      {"amount": "123.78912", "context_window": null, "cost_type": null, "currency": "USD", "description": null,
+       "inference_geo": null, "model": null, "service_tier": null, "speed": null, "token_type": null, "workspace_id": null}
+    ]},
+    {"starting_at": "2026-11-17T00:00:00Z", "ending_at": "2026-11-18T00:00:00Z", "results": []}
+  ],
+  "has_more": false,
+  "next_page": null
+}
