@@ -31,6 +31,12 @@ final class AppModel {
         }
     }
 
+    /// Minutes left on the one-hour mode while it's on.
+    var minutesLeft: Int? {
+        guard keepAwakeMode == .oneHour, let until = keepAwakeUntil else { return nil }
+        return KeepAwakePolicy.minutesLeft(now: Date(), until: until)
+    }
+
     /// The menu item's text for a mode, with the minutes left on the one-hour mode.
     func title(for mode: KeepAwakeMode) -> String {
         guard mode == .oneHour, keepAwakeMode == .oneHour, let until = keepAwakeUntil else { return mode.title }
@@ -42,6 +48,11 @@ final class AppModel {
 
     /// The menu bar's limits line: the Claude weekly window and the lowest balance.
     var usageSummary: String?
+    /// Each usage source as the menu bar panel shows it.
+    var usage: [UsageGlance] = []
+    var refreshingUsage = false
+    /// Sessions that are working right now, for the menu bar panel.
+    var busy: [Waiting] = []
     /// Which usage services have a key in the Keychain (never the keys themselves).
     var savedKeys: Set<String> = []
     var keyErrors: [String: String] = [:]
@@ -82,12 +93,16 @@ final class AppModel {
     }
 
     private let defaults: UserDefaults
+    /// False when drawing the panel with set data: nothing follows the board or checks usage.
+    let live: Bool
     private var syncingLogin = false
     private var polling: Task<Void, Never>?
     private let assertion = SleepAssertion()
 
-    init(defaults: UserDefaults = .standard) {
+    /// `live: false` skips following the board and the usage checks, for drawing the panel with set data.
+    init(defaults: UserDefaults = .standard, live: Bool = true) {
         self.defaults = defaults
+        self.live = live
         defaults.register(defaults: [Keys.menuBar: true, Keys.openWindow: true, Keys.startAtLogin: false])
         showMenuBarIcon = defaults.bool(forKey: Keys.menuBar)
         openWindowAtLogin = defaults.bool(forKey: Keys.openWindow)
@@ -96,6 +111,7 @@ final class AppModel {
         // The system's record is the truth; the user can remove the login item in System Settings.
         let status = SMAppService.mainApp.status
         startAtLogin = status == .enabled || status == .requiresApproval
+        guard live else { return }
         applyKeepAwake()
         // Follow the board from launch, so "while agents are working" works even before a window opens.
         Task { @MainActor [weak self] in
@@ -115,6 +131,16 @@ final class AppModel {
         savedKeys = saved
         statusLineInstalled = StatusLineInstaller(paths: Services.shared.paths).isInstalled
         usageSummary = await limits.summary()
+        usage = UsageGlance.from(await limits.cards())
+    }
+
+    /// Checks every usage service now, as the Usage tab's Refresh does.
+    func checkUsageNow() async {
+        guard !refreshingUsage else { return }
+        refreshingUsage = true
+        await limits.refresh()
+        await refreshUsageState()
+        refreshingUsage = false
     }
 
     /// Saves a key to the Keychain and checks that service with it.
@@ -163,7 +189,7 @@ final class AppModel {
         keepingAwake = assertion.isHeld
     }
 
-    /// Follows the board: the needs-you count and the first three sessions waiting on you.
+    /// Follows the board: the needs-you count, the first sessions waiting on you and those working.
     func follow(_ board: Board) {
         guard polling == nil else { return }
         polling = Task { [weak self] in
@@ -175,7 +201,9 @@ final class AppModel {
                 let needs = state.rows.filter { $0.group == "needs" }
                 self?.needsYou = needs.count
                 self?.working = state.rows.filter { $0.group == "working" }.count
-                self?.waiting = needs.prefix(3).map { Waiting(id: $0.id, name: $0.name, headline: $0.headline) }
+                self?.waiting = needs.prefix(5).map { Waiting(id: $0.id, name: $0.name, headline: $0.headline) }
+                self?.busy = state.rows.filter { $0.group == "working" }.prefix(3)
+                    .map { Waiting(id: $0.id, name: $0.name, headline: $0.headline) }
                 self?.applyKeepAwake()
                 try? await Task.sleep(for: .seconds(2))
             }

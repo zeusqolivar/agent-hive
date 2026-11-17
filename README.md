@@ -31,11 +31,13 @@ unless you add an API key for a usage service, which it sends only to that servi
 | **Connectors** | Each agent's MCP connectors (Claude Code, the Claude app, Antigravity, Codex, Cursor, OpenClaw): name, local or web, where it's set up, and the server's host name. Commands, settings, addresses and keys aren't shown. |
 | **System** | Other agent apps that are running, OpenClaw tasks and schedules, and what is keeping your Mac busy. |
 
-A menu bar icon shows how many sessions need you, and its menu shows your Claude weekly limit and lowest
-balance once those are known. **Open in Claude** jumps straight to a session in the Claude
-app.
+A menu bar icon shows how many sessions need you. Click it for a panel with your plan limits as bars, API-key
+balances and spending, the sessions that need you and those working, and **Keep Mac awake**; click a session to
+open it. **Open in Claude** jumps straight to a session in the Claude app.
 
-**Keep Mac awake**, in the menu bar menu and Settings, stops your Mac from going to sleep on its own so agents
+<img src="docs/menubar.png" width="400" alt="The menu bar panel, with sample data: Claude and Codex plan limits as bars, DeepSeek and OpenAI amounts, two sessions that need you and two working">
+
+**Keep Mac awake**, in the menu bar panel and Settings, stops your Mac from going to sleep on its own so agents
 keep running: *While agents are working* (lets it sleep once every session is idle), *Always*, or *For 1 hour*. A
 coffee cup appears on the menu bar icon while it's on. The screen can still turn off, and closing the lid on
 battery still sleeps.
@@ -164,6 +166,7 @@ Developer options:
 |---|---|
 | `HiveApp --dump /api/board /api/usage ...` | Prints the app's answer for each path after one refresh, then exits |
 | `HiveApp --open "#/classroom"` | Opens the window on a view |
+| `HiveApp --panel-snapshot <file.png> [--sample] [--dark]` | Draws the menu bar panel into a PNG, with your data or made-up data |
 | `HiveApp --login-item on\|off\|status` | Registers or removes the login item (bundled app only) |
 | `HIVE_DEBUG_TIMING=1` | Prints how long each refresh takes |
 

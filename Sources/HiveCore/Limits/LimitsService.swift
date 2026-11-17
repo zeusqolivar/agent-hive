@@ -161,7 +161,7 @@ public actor LimitsService {
         if case .cost = state.good { kind = "cost" } else if case .balance = state.good { kind = "balance" }
         guard keys.hasKey(for: id) else {
             return PlanCards.card(id: id, title: title, kind: kind, state: "not-set-up",
-                                  message: "Add \(provider.keyKind == "Admin key" ? "an" : "a") \(provider.keyKind) in Settings.")
+                                  message: "Add an \(provider.keyKind) in Settings.")
         }
         guard let good = state.good, let goodAt = state.goodAt else {
             if let error = state.error {

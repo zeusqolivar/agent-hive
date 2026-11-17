@@ -48,6 +48,7 @@ struct HiveApp: App {
 
     init() {
         Dump.runIfAsked()
+        PanelSnapshot.runIfAsked()
     }
 
     var body: some Scene {
@@ -63,11 +64,12 @@ struct HiveApp: App {
         .defaultSize(width: 1200, height: 800)
 
         MenuBarExtra(isInserted: $model.showMenuBarIcon) {
-            MenuBarMenu(model: model)
+            MenuBarPanel(model: model)
                 .onAppear { model.follow(Services.shared.board) }
         } label: {
             MenuBarLabel(model: model)
         }
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView(model: model)
