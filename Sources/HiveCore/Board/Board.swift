@@ -13,6 +13,7 @@ final class BoardBuilder: @unchecked Sendable {
     let locator: TranscriptLocator
     let ended: EndedSessions
     let antigravity: AntigravityReader
+    let hermes: HermesReader
     let now: @Sendable () -> Date
 
     init(paths: HivePaths, processes: ProcessSource, now: @escaping @Sendable () -> Date,
@@ -26,6 +27,7 @@ final class BoardBuilder: @unchecked Sendable {
         locator = TranscriptLocator(paths: paths)
         ended = EndedSessions(paths: paths, transcripts: transcripts, subagents: subagents, locator: locator, now: now)
         antigravity = AntigravityReader(paths: paths, transcripts: transcripts, locator: locator, now: now, pidAlive: pidAlive)
+        hermes = HermesReader(paths: paths, now: now)
         self.now = now
     }
 
@@ -55,6 +57,11 @@ final class BoardBuilder: @unchecked Sendable {
             raws[row.id] = raw
         }
         step("antigravity", mark); mark = Date()
+        // Hermes Agent's own sessions, in the same board. Its ids are its own, so a duplicate is only possible
+        // if another tool writes the same id, and then the first row wins as for everything else here.
+        for row in hermes.sessions() where raws[row.id] == nil {
+            rows.append(row)
+        }
         rows += ended.rows(excluding: Set(raws.keys))
         step("ended", mark)
         let order = ["needs": 0, "working": 1, "idle": 2, "ended": 3]

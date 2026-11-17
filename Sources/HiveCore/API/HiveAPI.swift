@@ -8,6 +8,17 @@ public protocol ActionHandler: Sendable {
     func reveal(folder: URL) -> Bool
     /// Brings Antigravity forward on a conversation (`AntigravityOpener`).
     func openAntigravity(sessionId: String, cwd: String?) async -> (ok: Bool, message: String)
+    /// Opens a session in a terminal instead of the Claude app: `claude --resume <id>` in its folder. The
+    /// default says no, which is what the Mac app wants.
+    func openInTerminal(sessionId: String, cwd: String?) -> Bool
+}
+
+extension ActionHandler {
+    /// Opens a session in a terminal instead of the Claude app: `claude --resume <id>` in its folder.
+    ///
+    /// Only the Windows shell implements this. The Mac app opens the desktop app through `claude://`, so the
+    /// default keeps its behaviour exactly as it was.
+    func openInTerminal(sessionId: String, cwd: String?) -> Bool { false }
 }
 
 /// Sends a reply to a session. Set when the app supports replies.
@@ -193,15 +204,25 @@ public struct HiveAPI: Sendable {
             }
             return Self.reply(200, ["ok": true, "message": "Opened the folder in Finder."])
         case "open":
+            if row.provider == "hermes" {
+                return Self.error(501, "Hermes sessions can't be opened from Agent Hive yet.")
+            }
             if row.provider == "google" || row.entry == "antigravity" {
                 let r = await actions.openAntigravity(sessionId: sid, cwd: row.cwd)
                 return Self.reply(200, ["ok": .bool(r.ok), "message": .string(r.message), "url": JSON(row.webUrl)])
             }
-            guard let host = row.hostId, Patterns.isID(host) else {
+            if let host = row.hostId, Patterns.isID(host), actions.open(hostSessionId: host) {
+                return Self.reply(200, ["ok": true, "message": "Opened in Claude."])
+            }
+            // On Windows the Claude app has no `claude://` handler (docs/windows/phase-0-findings.md), so a
+            // session is continued in a terminal instead: same session, same folder, one command.
+            if actions.openInTerminal(sessionId: sid, cwd: row.cwd) {
+                return Self.reply(200, ["ok": true, "message": "Continued in a terminal."])
+            }
+            if row.hostId == nil || !Patterns.isID(row.hostId ?? "") {
                 return Self.error(409, "This session isn't running in the Claude app.")
             }
-            guard actions.open(hostSessionId: host) else { return Self.error(500, "Couldn't open Claude.") }
-            return Self.reply(200, ["ok": true, "message": "Opened in Claude."])
+            return Self.error(500, "Couldn't open Claude.")
         default:
             return Self.error(400, "Unknown action.")
         }

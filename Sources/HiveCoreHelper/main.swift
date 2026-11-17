@@ -20,16 +20,7 @@ import WinSDK
 /// On Windows this writes to the handle directly: Foundation's standard-error file handle reaches a console but
 /// not a redirected file, and the shell redirects it to `%APPDATA%\Agent Hive\logs\hive-core.log`.
 func log(_ message: String) {
-    let data = Data((message + "\n").utf8)
-    #if os(Windows)
-    var written: DWORD = 0
-    let handle = GetStdHandle(STD_ERROR_HANDLE)
-    _ = data.withUnsafeBytes { raw in
-        WriteFile(handle, raw.baseAddress, DWORD(raw.count), &written, nil)
-    }
-    #else
-    FileHandle.standardError.write(data)
-    #endif
+    Diagnostics.write(message)
 }
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -104,6 +95,8 @@ if let i = arguments.firstIndex(of: "--post"), i + 2 < arguments.count {
 // The pipe. Started with the refresh loops as the Mac app starts them.
 let services = HiveServices(actions: HelperActions(), pages: pages, start: true)
 
+
+
 /// Serialises the answers: each Task may finish in any order, but a line is written whole.
 actor AnswerWriter {
     private let handle = FileHandle.standardOutput
@@ -133,6 +126,10 @@ func answer(_ line: Data) {
     case .success(let request):
         outstanding.enter()
         Task {
+            // The first board takes a couple of seconds. Waiting here — in a request's own task, never on the
+            // main thread, which would starve the refresh loop on Windows — is what keeps a page's first
+            // question from being answered with an empty board.
+            await services.board.waitUntilReady()
             let response = await services.api.handle(method: request.method, path: request.path, body: request.body)
             await writer.write(HelperFraming.Answer(id: request.id, status: response.status,
                                                     contentType: response.contentType, body: response.body))
