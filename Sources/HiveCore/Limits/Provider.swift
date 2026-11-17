@@ -45,7 +45,13 @@ public protocol UsageProvider: Sendable {
     var host: String { get }
     /// What kind of key Settings asks for.
     var keyKind: String { get }
+    /// The card's kind: `balance` or `cost`.
+    var kind: String { get }
     func fetch(key: String, http: HTTPClient, now: Date) async -> ProviderResult
+}
+
+extension UsageProvider {
+    public var kind: String { "balance" }
 }
 
 public enum UsageProviders {

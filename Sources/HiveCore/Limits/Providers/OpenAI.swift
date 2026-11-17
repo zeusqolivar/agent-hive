@@ -14,6 +14,7 @@ public struct OpenAIProvider: UsageProvider {
     public let title = "OpenAI"
     public let host = "api.openai.com"
     public let keyKind = "Admin key"
+    public let kind = "cost"
 
     public init() {}
 

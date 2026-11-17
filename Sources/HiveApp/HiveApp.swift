@@ -9,6 +9,7 @@ final class Services: Sendable {
     let paths = HivePaths.current
     let board: Board
     let usage: UsageCounter
+    let limits: LimitsService
     let api: HiveAPI
 
     static func make(start: Bool) -> Services { Services(start: start) }
@@ -20,14 +21,16 @@ final class Services: Sendable {
         usage = UsageCounter(paths: paths, antigravityProject: { liveBoard.antigravityProject($0) })
         let skills = SkillsReader(paths: paths)
         let jobs = SkillsJobs(paths: paths, onFinish: { skills.invalidate() })
+        limits = LimitsService(paths: paths, keys: KeychainKeyStore(), http: URLSessionHTTP())
         api = HiveAPI(board: board, usage: usage, skills: skills, jobs: jobs, system: SystemReport(paths: paths),
                       classroom: ClassroomStore(paths: paths), actions: WorkspaceActions(), pages: Self.webFolder(),
-                      replies: replies, connectors: ConnectorsReader(paths: paths))
+                      replies: replies, connectors: ConnectorsReader(paths: paths), limits: limits)
         guard start else { return }
-        let board = self.board, usage = self.usage
+        let board = self.board, usage = self.usage, limits = self.limits
         Task {
             await board.start()
             usage.start()
+            await limits.start()
         }
     }
 

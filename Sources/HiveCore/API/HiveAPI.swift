@@ -36,10 +36,11 @@ public struct HiveAPI: Sendable {
     let pages: URL?
     let replies: ReplyHandler?
     let connectors: ConnectorsReader?
+    let limits: LimitsService?
 
     public init(board: Board, usage: UsageCounter, skills: SkillsReader, jobs: SkillsJobs, system: SystemReport,
                 classroom: ClassroomStore, actions: ActionHandler, pages: URL? = nil, replies: ReplyHandler? = nil,
-                connectors: ConnectorsReader? = nil) {
+                connectors: ConnectorsReader? = nil, limits: LimitsService? = nil) {
         self.board = board
         self.usage = usage
         self.skills = skills
@@ -50,6 +51,7 @@ public struct HiveAPI: Sendable {
         self.pages = pages
         self.replies = replies
         self.connectors = connectors
+        self.limits = limits
     }
 
     static func reply(_ status: Int, _ body: JSON) -> Response {
@@ -73,7 +75,7 @@ public struct HiveAPI: Sendable {
     }
 
     private func get(_ path: String) async -> Response {
-        if path.hasPrefix("/api/"), !["/api/board", "/api/classroom", "/api/connectors"].contains(path) { await board.waitUntilReady() }
+        if path.hasPrefix("/api/"), !["/api/board", "/api/classroom", "/api/connectors", "/api/limits"].contains(path) { await board.waitUntilReady() }
         switch path {
         case "/healthz":
             return Response(status: 200, contentType: "text/plain", body: Data("ok".utf8))
@@ -95,6 +97,9 @@ public struct HiveAPI: Sendable {
         case "/api/connectors":
             guard let connectors else { return Self.error(404, "Not found") }
             return Self.reply(200, connectors.report())
+        case "/api/limits":
+            guard let limits else { return Self.error(404, "Not found") }
+            return Self.reply(200, await limits.cards())
         default:
             break
         }
@@ -118,7 +123,8 @@ public struct HiveAPI: Sendable {
     }
 
     private func post(_ path: String, _ body: Data) async -> Response {
-        guard ["/api/action", "/api/skills/run", "/api/reply", "/api/classroom"].contains(path) else {
+        guard ["/api/action", "/api/skills/run", "/api/reply", "/api/classroom", "/api/limits/refresh",
+               "/api/limits/claude"].contains(path) else {
             return Self.error(404, "Not found")
         }
         if path == "/api/classroom" { return saveClassroom(body) }
@@ -132,6 +138,23 @@ public struct HiveAPI: Sendable {
         switch path {
         case "/api/action":
             return await action(request)
+        case "/api/limits/refresh":
+            guard let limits else { return Self.error(404, "Not found") }
+            // `{auto: true}` when the Usage tab opens: respects paused services and the one-minute gap.
+            await limits.checkAll(manual: request["auto"]?.bool != true)
+            return Self.reply(200, await limits.cards())
+        case "/api/limits/claude":
+            guard let limits else { return Self.error(404, "Not found") }
+            do {
+                try await limits.claude(action: request["action"]?.string ?? "")
+            } catch is LimitsService.BadAction {
+                return Self.error(400, "Unknown action.")
+            } catch StatusLineError.unreadableSettings {
+                return Self.error(409, "~/.claude/settings.json isn't valid JSON, so it was left alone.")
+            } catch {
+                return Self.error(500, "Couldn't change the Claude status line.")
+            }
+            return Self.reply(200, await limits.cards())
         case "/api/skills/run":
             let r = jobs.start(action: request["action"]?.string, plugin: request["plugin"]?.string)
             return Response(status: r.status, contentType: Self.json, body: r.body)

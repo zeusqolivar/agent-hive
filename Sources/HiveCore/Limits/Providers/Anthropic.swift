@@ -17,6 +17,7 @@ public struct AnthropicProvider: UsageProvider {
     public let title = "Anthropic"
     public let host = "api.anthropic.com"
     public let keyKind = "Admin key"
+    public let kind = "cost"
     static let version = "2026-10-21"
 
     public init() {}

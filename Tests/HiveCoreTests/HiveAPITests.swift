@@ -18,15 +18,23 @@ final class RecordingActions: ActionHandler, @unchecked Sendable {
 
 @Suite struct HiveAPITests {
     static func api(actions: RecordingActions = RecordingActions(), web: URL? = nil,
-                    classroom: ClassroomStore? = nil, connectors: ConnectorsReader? = nil) async throws -> HiveAPI {
+                    classroom: ClassroomStore? = nil) async throws -> HiveAPI {
         let (paths, procs) = try BoardTests.liveHome()
         let board = Board(paths: paths, processes: procs, now: { Fixture.nowDate })
         await board.refresh()
         let usage = UsageCounter(paths: paths, now: { Fixture.nowDate })
         return HiveAPI(board: board, usage: usage, skills: SkillsReader(paths: paths),
                        jobs: SkillsJobs(paths: paths, runner: FakeRunner()), system: SystemReport(paths: paths),
-                       classroom: classroom ?? ClassroomStore(paths: paths), actions: actions, pages: web,
-                       connectors: connectors)
+                       classroom: classroom ?? ClassroomStore(paths: paths), actions: actions, pages: web)
+    }
+
+    /// An API over an empty home with a board that never refreshes, for routes that don't read the board.
+    static func lightAPI(connectors: ConnectorsReader? = nil, limits: LimitsService? = nil) throws -> HiveAPI {
+        let paths = HivePaths(home: try tempHome(), uid: 501)
+        return HiveAPI(board: Board(paths: paths, processes: FixedProcesses(table: [:])), usage: UsageCounter(paths: paths),
+                       skills: SkillsReader(paths: paths), jobs: SkillsJobs(paths: paths, runner: FakeRunner()),
+                       system: SystemReport(paths: paths), classroom: ClassroomStore(paths: paths),
+                       actions: RecordingActions(), connectors: connectors, limits: limits)
     }
 
     static func post(_ api: HiveAPI, _ path: String, _ body: String) async -> (Int, JSON?) {
@@ -67,12 +75,47 @@ final class RecordingActions: ActionHandler, @unchecked Sendable {
 
     @Test func connectorsRoute() async throws {
         let reader = ConnectorsReader(paths: HivePaths(home: ConnectorsTests.home, uid: 501))
-        let r = await (try Self.api(connectors: reader)).handle(method: "GET", path: "/api/connectors", body: nil)
+        let r = await (try Self.lightAPI(connectors: reader)).handle(method: "GET", path: "/api/connectors", body: nil)
         #expect(r.status == 200)
         let body = try JSON.parse(r.body)
         #expect(body["agents"]?.array?.count == 6)
         #expect(!String(decoding: r.body, as: UTF8.self).contains("SECRET"))
-        #expect(await (try Self.api()).handle(method: "GET", path: "/api/connectors", body: nil).status == 404)
+        #expect(await (try Self.lightAPI()).handle(method: "GET", path: "/api/connectors", body: nil).status == 404)
+    }
+
+    @Test func limitsRoutes() async throws {
+        let provider = ScriptedProvider([.balance(amount: 2, currency: "USD", spent: nil)])
+        let paths = HivePaths(home: try tempHome(), uid: 501)
+        let limits = LimitsService(paths: paths, keys: MemoryKeyStore(["deepseek": LimitsServiceTests.key]),
+                                   http: FakeHTTP(), providers: [provider], now: { ProvidersTests.now })
+        let api = try Self.lightAPI(limits: limits)
+        let r = await api.handle(method: "GET", path: "/api/limits", body: nil)
+        #expect(r.status == 200)
+        let body = try JSON.parse(r.body)
+        #expect(body["apiKeys"] == true)
+        #expect(body["cards"]?.array?.count == 4)
+        #expect(provider.calls == 0)
+
+        let (status, refreshed) = await Self.post(api, "/api/limits/refresh", "{}")
+        #expect(status == 200)
+        #expect(provider.calls == 1)
+        #expect(refreshed?["cards"]?.array?.last?["balance"]?["amount"] == 2.0)
+        let (autoStatus, _) = await Self.post(api, "/api/limits/refresh", #"{"auto": true}"#)
+        #expect(autoStatus == 200)
+        #expect(provider.calls == 1)  // checked under a minute ago
+
+        let (bad, _) = await Self.post(api, "/api/limits/claude", #"{"action": "nope"}"#)
+        #expect(bad == 400)
+        let (installed, cards) = await Self.post(api, "/api/limits/claude", #"{"action": "install"}"#)
+        #expect(installed == 200)
+        #expect(cards?["cards"]?.array?.first?["installed"] == true)
+        let (removed, _) = await Self.post(api, "/api/limits/claude", #"{"action": "remove"}"#)
+        #expect(removed == 200)
+        #expect(!StatusLineInstaller(paths: paths).isInstalled)
+
+        let none = try Self.lightAPI()
+        #expect(await none.handle(method: "GET", path: "/api/limits", body: nil).status == 404)
+        #expect(await Self.post(none, "/api/limits/refresh", "{}").0 == 404)
     }
 
     @Test func actionForASessionNotOnTheBoardRunsNothing() async throws {
