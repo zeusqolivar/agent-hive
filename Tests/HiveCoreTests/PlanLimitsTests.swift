@@ -302,26 +302,29 @@ func tempHome() throws -> URL {
     }
 
     /// Runs the generated script the way Claude Code does: the status JSON on stdin, output to the status line.
-    static func run(_ script: URL, stdin: String) throws -> String {
+    static func run(_ script: URL, stdin: String) async throws -> String {
         let p = Process()
         p.executableURL = URL(filePath: "/bin/sh")
         p.arguments = ["-c", "'\(script.path)'"]
         let input = Pipe(), output = Pipe()
         p.standardInput = input
         p.standardOutput = output
+        // Wait without holding one of the test runner's threads.
+        let exited = AsyncStream<Void> { c in p.terminationHandler = { _ in c.yield(); c.finish() } }
         try p.run()
         input.fileHandleForWriting.write(Data(stdin.utf8))
         try input.fileHandleForWriting.close()
-        p.waitUntilExit()
-        return String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        for await _ in exited {}
+        return String(decoding: data, as: UTF8.self)
     }
 
-    @Test func scriptSavesLimitsAndRunsThePreviousCommand() throws {
+    @Test func scriptSavesLimitsAndRunsThePreviousCommand() async throws {
         let (paths, installer) = try Self.setup(
             #"{"statusLine": {"type": "command", "command": "/usr/bin/plutil -extract cwd raw -o - - ; echo ' done'"}}"#)
         try installer.install()
         let stdin = #"{"cwd": "/work/sample", "rate_limits": {"five_hour": {"used_percentage": 23.5, "resets_at": 1794920000}, "seven_day": {"used_percentage": 41, "resets_at": 1795400000}}}"#
-        let out = try Self.run(paths.statusLineScript, stdin: stdin)
+        let out = try await Self.run(paths.statusLineScript, stdin: stdin)
         #expect(out == "/work/sample\n done\n")
         let saved = try JSON.parse(Data(contentsOf: paths.claudeLimitsFile))
         #expect(saved["rate_limits"]?["five_hour"]?["used_percentage"] == 23.5)
@@ -330,14 +333,14 @@ func tempHome() throws -> URL {
         #expect(saved["cwd"] == nil)
 
         // A payload without rate_limits keeps the last saved limits.
-        _ = try Self.run(paths.statusLineScript, stdin: #"{"cwd": "/work/sample"}"#)
+        _ = try await Self.run(paths.statusLineScript, stdin: #"{"cwd": "/work/sample"}"#)
         #expect(try JSON.parse(Data(contentsOf: paths.claudeLimitsFile))["rate_limits"]?["seven_day"]?["used_percentage"] == 41)
     }
 
-    @Test func scriptWithoutPreviousCommandPrintsNothing() throws {
+    @Test func scriptWithoutPreviousCommandPrintsNothing() async throws {
         let (paths, installer) = try Self.setup(nil)
         try installer.install()
-        let out = try Self.run(paths.statusLineScript, stdin: #"{"rate_limits": {"five_hour": {"used_percentage": 5, "resets_at": 1}}}"#)
+        let out = try await Self.run(paths.statusLineScript, stdin: #"{"rate_limits": {"five_hour": {"used_percentage": 5, "resets_at": 1}}}"#)
         #expect(out.isEmpty)
         #expect(FileManager.default.fileExists(atPath: paths.claudeLimitsFile.path))
     }

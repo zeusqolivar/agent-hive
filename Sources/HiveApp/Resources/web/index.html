@@ -38,7 +38,8 @@ code,pre{font-family:var(--mono);font-size:12.5px}
 .top{display:flex;align-items:center;gap:20px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex:none}
 .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
 .brand svg{width:18px;height:20px;fill:var(--honey)}
-nav{display:flex;gap:2px}
+nav{display:flex;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
+@media (max-width:980px){nav a{padding:5px 8px}}
 nav a{padding:5px 11px;border-radius:7px;text-decoration:none;color:var(--ink2);font-weight:600;white-space:nowrap}
 nav a:hover{background:var(--hover)}
 nav a[aria-current=page]{background:var(--ink);color:var(--panel)}
@@ -292,6 +293,34 @@ td a:hover{text-decoration:underline}
 .skillbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
 .skillbar input{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--raised);min-width:220px}
 
+/* limits and spending */
+.limits-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.limits-head h2{margin:0}
+.limits-head .btn{margin-left:auto;padding:3px 10px;font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:10px;align-items:start}
+.lcard{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.lcard header{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.lcard header b{font-size:15px}
+.lcard .tag.bad{background:var(--error);color:var(--panel)}
+.lcard .win{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:13.5px}
+.lcard .win .meter{grid-column:1/-1}
+.meter{height:8px;background:var(--hover);border-radius:4px;overflow:hidden}
+.meter>i{display:block;height:100%;background:var(--bar);border-radius:4px}
+.meter.high>i{background:var(--honey)}
+.meter.full>i{background:var(--error)}
+.lcard .money{font-size:21px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.lcard table td,.lcard table th{font-size:13px;padding:3px 6px}
+.lcard .acts{display:flex;gap:8px;margin-top:auto}
+.lcard .acts .btn{padding:3px 10px;font-size:13px}
+.lcard .note{font-size:13px;margin:0}
+.ctable th,.ctable td{text-align:left;overflow-wrap:break-word}
+.ctable td:nth-child(2){white-space:nowrap}
+@media (min-width:700px){
+  .ctable{table-layout:fixed}
+  .ctable th:nth-child(1){width:30%}
+  .ctable th:nth-child(2){width:96px}
+  .ctable th:nth-child(3){width:34%}
+}
 @media (max-width:1100px){
   #v-classroom.on{flex-direction:column;overflow-y:auto}
   #roomBox{flex:none;height:62.5vw;min-height:320px}
@@ -336,6 +365,7 @@ td a:hover{text-decoration:underline}
     <a href="#/activity" data-nav="activity">Activity</a>
     <a href="#/usage" data-nav="usage">Usage</a>
     <a href="#/skills" data-nav="skills">Skills</a>
+    <a href="#/connectors" data-nav="connectors">Connectors</a>
     <a href="#/system" data-nav="system">System</a>
   </nav>
   <div class="tally" id="tally" aria-live="polite"></div>
@@ -368,7 +398,8 @@ td a:hover{text-decoration:underline}
   <div class="view" id="v-terminal"><div id="termList"></div><div id="termMain"></div></div>
   <div class="view page" id="v-activity"></div>
   <div class="view page" id="v-skills"></div>
-  <div class="view page" id="v-usage"></div>
+  <div class="view page" id="v-usage"><div class="wrap"><section id="limits" style="margin-top:0" aria-live="polite"></section><div id="usageBody"></div></div></div>
+  <div class="view page" id="v-connectors"></div>
   <div class="view page" id="v-system"></div>
 </main>
 <dialog id="roomModal" aria-label="Session details"><button class="btn x" data-close-modal>Close</button><div id="roomModalBody"></div></dialog>
@@ -383,7 +414,7 @@ td a:hover{text-decoration:underline}
 <script src="/room.js"></script>
 <script>
 "use strict";
-const VIEWS = ["agents","classroom","terminal","activity","usage","skills","system"];
+const VIEWS = ["agents","classroom","terminal","activity","usage","skills","connectors","system"];
 const $ = s => document.querySelector(s);
 // ?sample=N swaps the board for N made-up sessions, for checking the Classroom at any size. Off unless the URL asks.
 const SAMPLE = (v => v !== null && /^\d+$/.test(v) ? Math.min(200, +v) : null)(new URLSearchParams(location.search).get("sample"));
@@ -821,7 +852,7 @@ function renderUsage(u){
   const projectRows = u.projects.slice(0,14).map(p => `<tr><td>${esc(p.name)}</td><td>${num(p.today)}</td><td>${num(p.output)}</td><td>${p.responses.toLocaleString()}</td></tr>`).join("");
   const modelRows = u.models.map(m => `<tr><td>${esc(modelName(m.name))}</td><td>${num(m.output)}</td><td>${num(m.input + m.cacheWrite)}</td><td>${num(m.cacheRead)}</td></tr>`).join("");
   const sessionRows = u.sessions.map(s => `<tr><td><a href="#/agents/${esc(s.id)}">${esc(s.name)}</a></td><td>${num(s.output)}</td><td>${s.responses.toLocaleString()}</td></tr>`).join("");
-  setIf($("#v-usage"), "usage", `<div class="wrap">
+  setIf($("#usageBody"), "usage", `<section>
     <h1>${num(today.output)} tokens written today, ${num(total)} this week</h1>
     <p class="lead">Across ${today.responses.toLocaleString()} Claude Code responses today, including subagents.</p>
     ${scanning}
@@ -833,8 +864,8 @@ function renderUsage(u){
         <section><h2>Busiest sessions, 7 days</h2><table><thead><tr><th>Session</th><th>Written</th><th>Responses</th></tr></thead><tbody>${sessionRows}</tbody></table></section>
       </div>
     </div>
-    <section><p class="note">“Written” is output tokens. “Read new” is input Claude hadn't seen; “read from cache” is context it reused, usually far cheaper. Only Claude Code is counted here, because other tools don't record tokens on this Mac. Your plan's remaining quota isn't stored in these files, so it isn't shown.</p></section>
-  </div>`);
+    <section><p class="note">“Written” is output tokens. “Read new” is input Claude hadn't seen; “read from cache” is context it reused, usually far cheaper. Only Claude Code is counted here, because other tools don't record tokens on this Mac. Plan limits and API spending are under Limits and spending, above.</p></section>
+  </section>`);
 }
 $("#v-usage").addEventListener("mouseover", showTip);
 $("#v-usage").addEventListener("focusin", showTip);
@@ -1039,6 +1070,100 @@ $("#v-skills").addEventListener("click", async e => {
   } catch(err){ toast(err.message); }
 });
 
+/* ---------- limits and spending ---------- */
+// Cards from /api/limits: plan windows (Claude, Codex, Antigravity) and, in the Mac app, API-key balances and costs.
+function money(n, cur){
+  if(n == null) return "–";
+  try { return new Intl.NumberFormat([], {style:"currency", currency:cur || "USD", maximumFractionDigits:2}).format(n); }
+  catch { return n.toFixed(2) + " " + (cur || ""); }
+}
+const STATE_TAGS = {stale:["warn","Out of date"], error:["bad","Problem"], unavailable:["","Not available"], "not-set-up":["","Not set up"]};
+function limitCard(c, apiKeys){
+  const now = Date.now()/1000;
+  const [cls, word] = STATE_TAGS[c.state] || [];
+  const tag = word ? `<span class="tag ${cls}">${word}</span>` : "";
+  const wins = (c.windows || []).map(w => {
+    const p = Math.max(0, Math.min(100, w.usedPercent));
+    const left = w.resetsAt ? dur(Math.max(0, w.resetsAt - now)) : "";
+    return `<div class="win"><span>${esc(w.label)}</span><b>${Math.round(w.usedPercent)}% used</b>
+      <div class="meter ${p >= 95 ? "full" : p >= 80 ? "high" : ""}" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p)}" aria-label="${esc(c.title)}, ${esc(w.label)} window"><i style="width:${p}%"></i></div>
+      ${left ? `<small class="note">Resets in ${left}</small>` : ""}</div>`;
+  }).join("");
+  const bal = c.balance ? `<div><div class="money">${esc(money(c.balance.amount, c.balance.currency))}</div><small class="note">left</small></div>` : "";
+  const sp = c.spent ? `<table><thead><tr><th></th><th>Today</th><th>This week</th><th>This month</th></tr></thead><tbody><tr><td>Spent</td>
+      <td>${esc(money(c.spent.today, c.spent.currency))}</td><td>${esc(money(c.spent.week, c.spent.currency))}</td><td>${esc(money(c.spent.month, c.spent.currency))}</td></tr></tbody></table>
+      ${c.spent.estimated ? `<p class="note">Estimated from balance changes since Agent Hive started checking.</p>` : ""}` : "";
+  const msg = c.message ? `<p class="note">${esc(c.message)}</p>` : "";
+  const when = c.updatedAt ? `<p class="note">Updated ${esc(ago(c.updatedAt))}</p>` : "";
+  let acts = "";
+  if(c.id === "claude" && apiKeys){
+    acts = c.installed ? `<div class="acts"><button class="btn" data-claude="remove">Remove status line</button></div>`
+      : c.state === "not-set-up" ? `<div class="acts"><button class="btn main" data-claude="install">Set up</button></div>` : "";
+  } else if(c.id === "claude" && c.state === "not-set-up"){
+    acts = `<p class="note">Set it up in the Agent Hive Mac app.</p>`;
+  }
+  return `<article class="lcard" data-card="${esc(c.id)}"><header><b>${esc(c.title)}</b>${tag}</header>${wins}${bal}${sp}${msg}${when}${acts}</article>`;
+}
+function renderLimits(d){
+  ui.limits = d;
+  const cards = d.cards || [];
+  const unused = cards.filter(c => c.kind !== "plan" && c.state === "not-set-up");
+  const shown = cards.filter(c => !unused.includes(c));
+  const keysNote = !d.apiKeys ? `<p class="note">API-key balances and costs appear in the Agent Hive Mac app.</p>`
+    : unused.length ? `<p class="note">Not set up: ${unused.map(c => esc(c.title)).join(", ")}. Add an API key in Agent Hive's Settings, under Usage services, to see balances and spending.</p>` : "";
+  setIf($("#limits"), "limits", `<div class="limits-head"><h2>Limits and spending</h2>
+      <button class="btn" data-limits="refresh" ${ui.limitsBusy ? "disabled" : ""}>${ui.limitsBusy ? "Checking…" : "Refresh"}</button></div>
+    <div class="cards">${shown.map(c => limitCard(c, d.apiKeys)).join("")}</div>${keysNote}`);
+}
+// Opening the tab: show what's known, then ask for an automatic check (skips services checked in the last minute).
+async function loadLimits(){
+  try {
+    renderLimits(await api("/api/limits"));
+    if(!ui.limitsOpened && ui.limits.apiKeys){
+      ui.limitsOpened = true;
+      renderLimits(await api("/api/limits/refresh", {method:"POST", headers:{"Content-Type":"application/json"}, body:'{"auto": true}'}));
+    }
+  } catch(err){ if(err.status !== 404) toast(err.message); }
+}
+addEventListener("hashchange", () => { if(ui.view !== "usage") ui.limitsOpened = false; });
+$("#v-usage").addEventListener("click", async e => {
+  const b = e.target.closest("[data-limits],[data-claude]");
+  if(!b) return;
+  const post = (path, body) => api(path, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  try {
+    if(b.dataset.limits === "refresh"){
+      ui.limitsBusy = true; renderLimits(ui.limits);
+      try { renderLimits(await post("/api/limits/refresh", {})); } finally { ui.limitsBusy = false; renderLimits(ui.limits); }
+    } else if(b.dataset.claude === "install"){
+      if(!confirm("Set up the Claude status line?\n\nAgent Hive adds a small script as the status line in ~/.claude/settings.json. It saves your plan limits for Agent Hive and still runs the status line you have now. Remove puts it back.")) return;
+      renderLimits(await post("/api/limits/claude", {action:"install"}));
+      toast("Set up. Limits appear after your next Claude Code reply in a terminal.");
+    } else if(b.dataset.claude === "remove"){
+      renderLimits(await post("/api/limits/claude", {action:"remove"}));
+      toast("Removed. Your previous status line is back.");
+    }
+  } catch(err){ toast(err.message); }
+});
+
+/* ---------- connectors ---------- */
+const CONNECTOR_TYPES = {stdio:"Local", http:"Web", sse:"Web (SSE)"};
+function renderConnectors(d){
+  const agents = d.agents || [];
+  const total = agents.reduce((a, g) => a + g.connectors.length, 0);
+  const sections = agents.map(g => {
+    const rows = g.connectors.map(c => `<tr><td>${esc(c.name)}${c.disabled ? ` <span class="tag">Off</span>` : ""}</td>
+      <td>${esc(CONNECTOR_TYPES[c.type] || c.type)}</td><td>${esc(c.scope)}</td><td>${esc(c.host || "")}</td></tr>`).join("");
+    return `<section><h2>${esc(g.agent)} <span class="n">${g.connectors.length}</span></h2>${rows
+      ? `<table class="ctable"><thead><tr><th>Name</th><th>Type</th><th>Where it's set up</th><th>Server</th></tr></thead><tbody>${rows}</tbody></table>`
+      : `<p class="note">None set up.</p>`}</section>`;
+  }).join("");
+  setIf($("#v-connectors"), "connectors", `<div class="wrap">
+    <h1>${total} connector${total === 1 ? "" : "s"} across ${agents.length} agent${agents.length === 1 ? "" : "s"}</h1>
+    <p class="lead">The MCP servers each agent on this Mac is set up to use, read from their own config files. Commands, settings, addresses and keys aren't shown; web servers show their host name only.</p>
+    ${sections || `<div class="empty">No agents with connector settings were found.</div>`}
+    <section><p class="note">${esc(d.note || "")}</p></section></div>`);
+}
+
 /* ---------- refresh ---------- */
 function staleText(age, load, cores){
   const busy = load > (cores || 8) * 2;
@@ -1085,8 +1210,11 @@ async function refresh(force){
     } else if(ui.view === "activity"){
       ui.feed = (await api("/api/activity")).items;
       renderActivity(ui.feed);
-    } else if(ui.view === "usage" && (due("usage", 8000) || !ui.sigs.usage)){
-      renderUsage(await api("/api/usage"));
+    } else if(ui.view === "usage"){
+      if(!ui.limits || due("limits", 30000)) loadLimits();
+      if(due("usage", 8000) || !ui.sigs.usage) renderUsage(await api("/api/usage"));
+    } else if(ui.view === "connectors" && (due("connectors", 15000) || !ui.sigs.connectors)){
+      renderConnectors(await api("/api/connectors"));
     } else if(ui.view === "system" && (due("system", 8000) || !ui.sigs.system)){
       renderSystem(await api("/api/system"));
     }
@@ -1119,7 +1247,7 @@ addEventListener("keydown", e => {
   }
   if(typing || e.metaKey || e.ctrlKey || e.altKey) return;
   if(e.key === "/"){ e.preventDefault(); if(ui.view !== "agents") location.hash = "#/agents"; $("#q").focus(); return; }
-  if(/^[1-7]$/.test(e.key)){ location.hash = "#/" + VIEWS[+e.key-1]; return; }
+  if(/^[1-8]$/.test(e.key)){ location.hash = "#/" + VIEWS[+e.key-1]; return; }
   if(ui.view !== "agents") return;
   if(e.key === "o"){ const s = ui.detail; if(s?.live && (s.hostId || s.provider === "google" || s.entry === "antigravity")) act("open"); return; }
   if(e.key === "f"){ act("reveal"); return; }

@@ -1,1 +1,2 @@
-Pages copied from agent-dashboard at commit ab29424c9b449630b687069f8d5b997ddbb1e52d
+These pages are maintained in this repository (Sources/HiveApp/Resources/web) and served to the window
+by the app's hive:// scheme handler. They were first copied from a local web version that no longer exists.

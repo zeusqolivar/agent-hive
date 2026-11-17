@@ -82,6 +82,33 @@ struct WebView: NSViewRepresentable {
             decisionHandler(.cancel)
         }
 
+        /// The pages' `confirm()`, such as before setting up the Claude status line or updating every plugin.
+        /// Without this, WebKit answers every confirm with Cancel.
+        func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String,
+                     initiatedByFrame frame: WKFrameInfo) async -> Bool {
+            let alert = Self.alert(message)
+            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: "Cancel")
+            guard let window = webView.window else { return alert.runModal() == .alertFirstButtonReturn }
+            return await alert.beginSheetModal(for: window) == .alertFirstButtonReturn
+        }
+
+        func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
+                     initiatedByFrame frame: WKFrameInfo) async {
+            let alert = Self.alert(message)
+            guard let window = webView.window else { alert.runModal(); return }
+            _ = await alert.beginSheetModal(for: window)
+        }
+
+        /// The first paragraph as the title, the rest as the explanation.
+        static func alert(_ message: String) -> NSAlert {
+            let alert = NSAlert()
+            let parts = message.components(separatedBy: "\n\n")
+            alert.messageText = parts[0]
+            alert.informativeText = parts.dropFirst().joined(separator: "\n\n")
+            return alert
+        }
+
         func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                      for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
             if let url = action.request.url { NSWorkspace.shared.open(url) }

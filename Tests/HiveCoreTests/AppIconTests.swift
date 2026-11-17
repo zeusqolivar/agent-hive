@@ -12,15 +12,16 @@ import Testing
         #expect(plist["CFBundleIconFile"] as? String == "AppIcon")
     }
 
-    @Test func icnsHoldsEverySize() throws {
+    @Test func icnsHoldsEverySize() async throws {
         let icns = Self.repo.appending(path: "Sources/HiveApp/Resources/AppIcon.icns")
         let out = FileManager.default.temporaryDirectory.appending(path: "icon-\(UUID().uuidString).iconset")
         defer { try? FileManager.default.removeItem(at: out) }
         let p = Process()
         p.executableURL = URL(filePath: "/usr/bin/iconutil")
         p.arguments = ["-c", "iconset", icns.path, "-o", out.path]
+        let exited = AsyncStream<Void> { c in p.terminationHandler = { _ in c.yield(); c.finish() } }
         try p.run()
-        p.waitUntilExit()
+        for await _ in exited {}
         #expect(p.terminationStatus == 0)
         let names = Set(try FileManager.default.contentsOfDirectory(atPath: out.path))
         var expected = Set<String>()

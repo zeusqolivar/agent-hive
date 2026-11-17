@@ -184,8 +184,8 @@ final class RecordingActions: ActionHandler, @unchecked Sendable {
         #expect(await api.handle(method: "GET", path: "/missing.js", body: nil).status == 404)
     }
 
-    /// The pages bundled with the app: every script server.py serves, every script index.html loads,
-    /// and SOURCE naming the agent-dashboard commit they were copied from.
+    /// The pages bundled with the app: every script the API serves, every script index.html loads, the
+    /// Connectors view, and SOURCE saying the pages are maintained in this repository.
     @Test func bundledPagesMatchThePageScripts() throws {
         let root = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let web = root.appending(path: "Sources/HiveApp/Resources/web")
@@ -199,7 +199,10 @@ final class RecordingActions: ActionHandler, @unchecked Sendable {
         #expect(!loaded.isEmpty)
         #expect(Set(loaded).isSubset(of: Set(HiveAPI.pageScripts)), "\(loaded)")
         let source = try String(contentsOf: web.appending(path: "SOURCE"), encoding: .utf8)
-        #expect(source.range(of: #"commit [0-9a-f]{40}\b"#, options: .regularExpression) != nil, "\(source)")
+        #expect(source.contains("maintained in this repository"), "\(source)")
+        #expect(index.contains(#""skills","connectors","system""#))
+        #expect(index.contains(#"data-nav="connectors""#))
+        #expect(index.contains(#"id="limits""#))
     }
 }
 
