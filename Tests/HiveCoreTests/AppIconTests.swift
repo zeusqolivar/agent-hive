@@ -12,6 +12,8 @@ import Testing
         #expect(plist["CFBundleIconFile"] as? String == "AppIcon")
     }
 
+    #if os(macOS)
+    // The .icns container is a Mac format; Windows takes PNGs and an .ico.
     @Test func icnsHoldsEverySize() async throws {
         let icns = Self.repo.appending(path: "Sources/HiveApp/Resources/AppIcon.icns")
         let out = FileManager.default.temporaryDirectory.appending(path: "icon-\(UUID().uuidString).iconset")
@@ -28,6 +30,7 @@ import Testing
         for s in [16, 32, 128, 256, 512] { expected.insert("icon_\(s)x\(s).png"); expected.insert("icon_\(s)x\(s)@2x.png") }
         #expect(names == expected)
     }
+    #endif
 
     @Test func bundleScriptCopiesTheIcon() throws {
         let script = try String(contentsOf: Self.repo.appending(path: "scripts/bundle.sh"), encoding: .utf8)

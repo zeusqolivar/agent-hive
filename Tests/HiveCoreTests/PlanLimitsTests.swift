@@ -185,6 +185,9 @@ func tempHome() throws -> URL {
 
     static func settings(_ paths: HivePaths) throws -> JSON { try JSON.parse(Data(contentsOf: paths.settings)) }
 
+    #if !os(Windows)
+    // StatusLineInstaller writes statusline.sh and sets a shell command. Phase 4 adds the PowerShell twin;
+    // until then these tests describe the Mac only.
     @Test func installWithoutSettingsFileAndRemove() throws {
         let (paths, installer) = try Self.setup(nil)
         #expect(!installer.isInstalled)
@@ -277,6 +280,8 @@ func tempHome() throws -> URL {
         #expect(!FileManager.default.fileExists(atPath: paths.statusLineScript.path))
     }
 
+    #endif
+
     @Test func installTwiceIsHarmless() throws {
         let (paths, installer) = try Self.setup(#"{"statusLine": {"type": "command", "command": "echo old"}}"#)
         try installer.install()
@@ -287,6 +292,9 @@ func tempHome() throws -> URL {
         #expect(try Self.settings(paths)["statusLine"] == ["type": "command", "command": "echo old"])
     }
 
+    #if !os(Windows)
+    // Windows refuses symlinks without Developer Mode or elevation; FileManager.copyItem and atomic replace keep
+    // them intact there, but the test cannot set one up.
     @Test func symlinkedSettingsStayALink() throws {
         let (paths, installer) = try Self.setup(nil)
         let real = paths.home.appending(path: "dotfiles/settings.json")
@@ -319,6 +327,10 @@ func tempHome() throws -> URL {
         return String(decoding: data, as: UTF8.self)
     }
 
+    #endif
+
+    #if !os(Windows)
+    // These two run the script with sh. Windows gets the PowerShell script and its own tests in phase 4.
     @Test func scriptSavesLimitsAndRunsThePreviousCommand() async throws {
         let (paths, installer) = try Self.setup(
             #"{"statusLine": {"type": "command", "command": "/usr/bin/plutil -extract cwd raw -o - - ; echo ' done'"}}"#)
@@ -344,4 +356,5 @@ func tempHome() throws -> URL {
         #expect(out.isEmpty)
         #expect(FileManager.default.fileExists(atPath: paths.claudeLimitsFile.path))
     }
+    #endif
 }

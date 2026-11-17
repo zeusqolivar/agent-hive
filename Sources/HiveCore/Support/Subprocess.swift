@@ -34,7 +34,9 @@ enum Subprocess {
         reader.start()
         if done.wait(timeout: .now() + timeout) == .timedOut {
             process.terminate()
-            kill(process.processIdentifier, SIGKILL)
+            #if !os(Windows)
+            kill(process.processIdentifier, SIGKILL)  // terminate() only asks; this ends it.
+            #endif
             _ = done.wait(timeout: .now() + 2)
             throw Timeout()
         }

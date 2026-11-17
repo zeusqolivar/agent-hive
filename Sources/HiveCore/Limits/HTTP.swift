@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationNetworking)
+// On Windows, URLSession and friends live in a separate module.
+import FoundationNetworking
+#endif
 
 /// The one way usage services reach the network, so tests can answer with fixtures.
 public protocol HTTPClient: Sendable {

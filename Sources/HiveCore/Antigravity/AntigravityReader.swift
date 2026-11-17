@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(SQLite3)
 import SQLite3
+#else
+import CSQLite
+#endif
 
 /// The running Antigravity app's daemon file (`daemon/hub_<port>.json`). Only the pid and the two ports are kept;
 /// nothing else in the file is used, stored or served.
@@ -78,7 +82,7 @@ final class AntigravityReader: @unchecked Sendable {
                   let info = (try? JSON.parse(data))?.object, let pid = info["pid"]?.int,
                   pid > 0, pid <= Int(Int32.max), pidAlive(Int32(pid)) else { continue }
             let cmd = table[Int32(pid)]?.cmd ?? ""
-            let isApp = cmd.contains("/Antigravity.app/")
+            let isApp = cmd.contains("/Antigravity.app/") || AgentProcesses.isAntigravity(cmd)
             let isCLI = agyHub.firstMatch(in: cmd, range: NSRange(cmd.startIndex..., in: cmd)) != nil
             if !table.isEmpty && !(isApp || isCLI) { continue }
             let mtime = (try? FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate] as? Date) ?? .distantPast
@@ -92,10 +96,16 @@ final class AntigravityReader: @unchecked Sendable {
     func pid(_ table: [Int32: ProcRecord]) -> Int? {
         if let hub = hub(table) { return hub.pid }
         let procs = table.values.sorted { $0.pid < $1.pid }
-        if let p = procs.first(where: { $0.cmd.contains("Antigravity") && $0.cmd.contains("language_server") && alive(Int($0.pid)) }) {
+        if let p = procs.first(where: {
+            (($0.cmd.contains("Antigravity") && $0.cmd.contains("language_server"))
+                || AgentProcesses.isAntigravityLanguageServer($0.cmd)) && alive(Int($0.pid))
+        }) {
             return Int(p.pid)
         }
-        if let p = procs.first(where: { $0.cmd.contains("/Applications/Antigravity.app/Contents/MacOS/Antigravity") && alive(Int($0.pid)) }) {
+        if let p = procs.first(where: {
+            ($0.cmd.contains("/Applications/Antigravity.app/Contents/MacOS/Antigravity")
+                || AgentProcesses.isAntigravityApp($0.cmd)) && alive(Int($0.pid))
+        }) {
             return Int(p.pid)
         }
         return nil

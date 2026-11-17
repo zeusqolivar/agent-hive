@@ -54,10 +54,10 @@ public struct ClassroomStore: Sendable {
                 try? handle.close()
                 throw error
             }
-            // rename(2) replaces the old file in one step, so a reader sees the old room or the new one.
-            guard rename(tmp.path, file.path) == 0 else {
-                return (400, ["error": .string(String(cString: strerror(errno)))])
-            }
+            // One step: a reader sees the old room or the new one, never a half-written file.
+            try AtomicFile.replace(file, with: tmp)
+        } catch let failure as AtomicFile.Failed {
+            return (400, ["error": .string(failure.message)])
         } catch {
             return (400, ["error": .string(error.localizedDescription)])
         }

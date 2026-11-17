@@ -1,0 +1,14 @@
+# Fixtures are data, not text: front matter, JSONL transcripts and the exact bytes a reader sees all depend on
+# their line endings being LF. Windows checkouts would otherwise convert them to CRLF and tests would parse
+# them differently from the Mac.
+Tests/HiveCoreTests/Fixtures/** -text
+
+# Everything else stays LF on every system, so a Windows checkout matches CI and the Mac.
+*.swift text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.c text eol=lf
+*.h text eol=lf

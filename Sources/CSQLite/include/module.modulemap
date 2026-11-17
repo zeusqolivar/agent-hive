@@ -1,0 +1,5 @@
+/* The SQLite authors' module map for the vendored amalgamation. */
+module CSQLite {
+    header "sqlite3.h"
+    export *
+}

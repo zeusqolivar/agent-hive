@@ -23,7 +23,12 @@ import Testing
         let diff = contractDiff(.array(rows), expected["rows"])
         #expect(diff.isEmpty, "\(diff.prefix(12).joined(separator: "\n"))")
         // The whole board in server.py's order: Antigravity rows sorted in with Claude's.
+        // The fixture gives every file the same modification time, so sessions in a group tie on `lastTs` and the
+        // order falls back to directory enumeration, which differs between APFS and NTFS. The rows themselves are
+        // compared above; the Mac keeps the stricter order check.
+        #if !os(Windows)
         #expect(JSON.array(sessions.compactMap { $0["id"] }) == expected["ids"])
+        #endif
         // Every Antigravity row has doing, even when it ended, as server.py writes it.
         #expect(rows.allSatisfy { $0.object?.keys.contains("doing") == true })
         #expect(rows.allSatisfy { $0["canReply"] == false && $0["replyNote"] == .null })
@@ -132,7 +137,9 @@ import Testing
                                 cmd: "/Applications/Antigravity.app/Contents/Resources/bin/language_server --x")
         let app = ProcRecord(pid: 1, ppid: 0, uptime: 5, rssMB: 1, cpu: 0,
                              cmd: "/Applications/Antigravity.app/Contents/MacOS/Antigravity")
-        let reader = Self.reader(paths, alive: SessionReader.pidAlive)
+        // Alive means "one of the two pids in the table", so the test does not depend on which pids a system
+        // happens to have running.
+        let reader = Self.reader(paths, alive: { $0 == me || $0 == 1 })
         #expect(reader.pid([me: server, 1: app]) == Int(me))
         #expect(reader.pid([1: app]) == 1)
         #expect(reader.pid([:]) == nil)

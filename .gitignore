@@ -5,3 +5,8 @@ build/
 DerivedData/
 .superpowers/
 .DS_Store
+/Info.plist
+*.log
+p*-build.txt
+p*-test.txt
+p*-one.txt

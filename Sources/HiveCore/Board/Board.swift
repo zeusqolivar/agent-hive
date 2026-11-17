@@ -131,9 +131,14 @@ public actor Board {
         self.pageVersion = pageVersion
         self.replies = replies
         if replies != nil { capabilities = ["reply": true] }
+        #if os(Windows)
+        // Windows has no uname(2); the machine name is what the Mac code reads there.
+        host = ProcessInfo.processInfo.environment["COMPUTERNAME"] ?? "PC"
+        #else
         var name = utsname()
         uname(&name)
         host = withUnsafeBytes(of: &name.nodename) { String(decoding: $0.prefix(while: { $0 != 0 }), as: UTF8.self) }
+        #endif
     }
 
     /// Starts refreshing: build, wait a second, build again, as server.py's `board_loop` does.

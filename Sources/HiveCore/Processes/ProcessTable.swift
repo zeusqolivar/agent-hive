@@ -74,6 +74,178 @@ public struct PSProcessSource: ProcessSource {
     }
 }
 
+/// The process source this system uses.
+public enum ProcessSources {
+    public static func system() -> ProcessSource {
+        #if os(Windows)
+        return WindowsProcessSource()
+        #else
+        return PSProcessSource()
+        #endif
+    }
+}
+
+/// One process as Windows reports it, before any arithmetic.
+///
+/// Keeping the raw numbers separate is what makes the board's CPU and memory figures testable on macOS: the
+/// Win32 calls are the only part that cannot run there.
+public struct ProcessRow: Sendable, Equatable {
+    public var pid: Int32
+    public var ppid: Int32
+    /// When the process started, as Windows records it.
+    public var startedAt: Date
+    /// Total processor time used, in seconds: kernel plus user.
+    public var cpuSeconds: Double
+    public var workingSetBytes: UInt64
+    public var commandLine: String
+
+    public init(pid: Int32, ppid: Int32, startedAt: Date, cpuSeconds: Double, workingSetBytes: UInt64,
+                commandLine: String) {
+        self.pid = pid
+        self.ppid = ppid
+        self.startedAt = startedAt
+        self.cpuSeconds = cpuSeconds
+        self.workingSetBytes = workingSetBytes
+        self.commandLine = commandLine
+    }
+}
+
+/// Turns Windows process rows into the board's records.
+public enum ProcessRecords {
+    /// CPU as `ps`'s `pcpu` reports it: the process's total processor time over its lifetime, as a percentage.
+    /// Lifetime is floored at one second so a process that has just started doesn't read as 8000%.
+    public static func make(from rows: [ProcessRow], now: Date) -> [Int32: ProcRecord] {
+        var table: [Int32: ProcRecord] = [:]
+        for row in rows {
+            let wall = max(1, now.timeIntervalSince(row.startedAt))
+            let cpu = (row.cpuSeconds / wall) * 100
+            let mb = (Double(row.workingSetBytes) / 1_048_576).rounded(.toNearestOrEven)
+            table[row.pid] = ProcRecord(pid: row.pid, ppid: row.ppid,
+                                        uptime: Int(wall), rssMB: Int(mb),
+                                        cpu: (cpu * 10).rounded(.toNearestOrEven) / 10,
+                                        cmd: Text.prefix(row.commandLine, 1500))
+        }
+        return table
+    }
+}
+
+#if os(Windows)
+import WinSDK
+import CWinProcess
+
+/// Lists processes with the Win32 API: `CreateToolhelp32Snapshot` for pids and parents, `GetProcessTimes` for
+/// CPU, `K32GetProcessMemoryInfo` for memory, and `NtQueryInformationProcess` (through `CWinProcess`) for the
+/// command line.
+///
+/// The board calls this every 2 seconds, so it stays flat and closes every handle it opens. Command lines are
+/// unavailable for elevated or protected processes; those rows carry the executable name instead.
+public struct WindowsProcessSource: ProcessSource {
+    /// Room for a long command line; `ProcRecord.cmd` is trimmed to 1500 characters anyway.
+    static let commandLineCapacity = 32 * 1024
+
+    public init() {}
+
+    public func snapshot() throws -> [Int32: ProcRecord] {
+        ProcessRecords.make(from: Self.rows(), now: Date())
+    }
+
+    /// Whether a pid is alive: `OpenProcess` then `GetExitCodeProcess`. Access denied counts as alive, just as
+    /// `EPERM` does from `kill(pid, 0)` on the Mac.
+    public static func pidAlive(_ pid: Int32) -> Bool {
+        guard pid > 0 else { return false }
+        guard let handle = OpenProcess(DWORD(PROCESS_QUERY_LIMITED_INFORMATION), false, DWORD(pid)) else {
+            return GetLastError() == DWORD(ERROR_ACCESS_DENIED)
+        }
+        defer { CloseHandle(handle) }
+        var code: DWORD = 0
+        guard GetExitCodeProcess(handle, &code) else { return true }
+        return code == DWORD(STILL_ACTIVE)
+    }
+
+    static func rows() -> [ProcessRow] {
+        guard let snapshot = CreateToolhelp32Snapshot(DWORD(TH32CS_SNAPPROCESS), 0),
+              snapshot != INVALID_HANDLE_VALUE else { return [] }
+        defer { CloseHandle(snapshot) }
+
+        var entry = PROCESSENTRY32W()
+        entry.dwSize = DWORD(MemoryLayout<PROCESSENTRY32W>.size)
+        var rows: [ProcessRow] = []
+        var more = Process32FirstW(snapshot, &entry)
+        // One buffer for every command line in the snapshot: allocating per process doubled the cost of a
+        // refresh, which runs every 2 seconds.
+        var buffer = [WCHAR](repeating: 0, count: commandLineCapacity)
+        while more {
+            let pid = Int32(entry.th32ProcessID)
+            if pid > 0 {
+                let ppid = Int32(entry.th32ParentProcessID)
+                let name = exeName(entry)
+                if let row = details(pid: pid, ppid: ppid, fallback: name, buffer: &buffer) {
+                    rows.append(row)
+                }
+            }
+            more = Process32NextW(snapshot, &entry)
+        }
+        return rows
+    }
+
+    static func exeName(_ entry: PROCESSENTRY32W) -> String {
+        var entry = entry
+        return withUnsafePointer(to: &entry.szExeFile) { raw in
+            raw.withMemoryRebound(to: WCHAR.self, capacity: Int(MAX_PATH)) { wide in
+                String(decodingCString: wide, as: UTF16.self)
+            }
+        }
+    }
+
+    /// Times, memory and command line for one process. Nil when it has already exited or access is refused.
+    static func details(pid: Int32, ppid: Int32, fallback name: String, buffer: inout [WCHAR]) -> ProcessRow? {
+        guard let handle = OpenProcess(DWORD(PROCESS_QUERY_LIMITED_INFORMATION), false, DWORD(pid)) else { return nil }
+        defer { CloseHandle(handle) }
+
+        var created = FILETIME(), exited = FILETIME(), kernel = FILETIME(), user = FILETIME()
+        guard GetProcessTimes(handle, &created, &exited, &kernel, &user) else { return nil }
+
+        var counters = PROCESS_MEMORY_COUNTERS_EX()
+        let sized = DWORD(MemoryLayout<PROCESS_MEMORY_COUNTERS_EX>.size)
+        let gotMemory = withUnsafeMutablePointer(to: &counters) { pointer in
+            pointer.withMemoryRebound(to: PROCESS_MEMORY_COUNTERS.self, capacity: 1) { base in
+                K32GetProcessMemoryInfo(handle, base, sized)
+            }
+        }
+
+        return ProcessRow(pid: pid, ppid: ppid,
+                          startedAt: date(from: created),
+                          cpuSeconds: seconds(from: kernel) + seconds(from: user),
+                          workingSetBytes: gotMemory ? UInt64(counters.WorkingSetSize) : 0,
+                          commandLine: commandLine(pid: pid, buffer: &buffer) ?? name)
+    }
+
+    /// The command line through `CWinProcess`, which asks `ntdll` for it. Nil when access is refused.
+    static func commandLine(pid: Int32, buffer: inout [WCHAR]) -> String? {
+        let written = buffer.withUnsafeMutableBufferPointer { wide -> Int32 in
+            Int32(hive_process_command_line(UInt32(pid), wide.baseAddress, Int32(wide.count)))
+        }
+        guard written > 0 else { return nil }
+        return buffer.withUnsafeBufferPointer { wide in
+            String(decodingCString: wide.baseAddress!, as: UTF16.self)
+        }
+    }
+
+    /// A `FILETIME` is 100-nanosecond ticks since 1601-01-01.
+    static func date(from fileTime: FILETIME) -> Date {
+        Date(timeIntervalSince1970: ticks(fileTime) / 10_000_000 - 11_644_473_600)
+    }
+
+    static func seconds(from fileTime: FILETIME) -> Double {
+        ticks(fileTime) / 10_000_000
+    }
+
+    static func ticks(_ fileTime: FILETIME) -> Double {
+        Double((UInt64(fileTime.dwHighDateTime) << 32) | UInt64(fileTime.dwLowDateTime))
+    }
+}
+#endif
+
 /// A command a session is running, as the board shows it.
 public struct SessionCommand: Sendable, Equatable, JSONRepresentable {
     public var pid: Int32

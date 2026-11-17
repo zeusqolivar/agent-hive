@@ -56,8 +56,7 @@ public final class ReplySender: ReplyPolicy, ReplyHandler, @unchecked Sendable {
 
     func commandEnvironment() -> [String: String] {
         var env = environment.filter { !$0.key.hasPrefix("CLAUDE") }
-        env["PATH"] = [paths.home.path + "/.local/bin", "/opt/homebrew/bin", env["PATH"] ?? "/usr/bin:/bin"]
-            .joined(separator: ":")
+        env["PATH"] = ToolLocator.pathValue(home: paths.home, environment: env)
         return env
     }
 

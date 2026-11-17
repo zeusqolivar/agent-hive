@@ -64,7 +64,11 @@ public enum SessionReader {
     /// `kill(pid, 0)`: alive unless the process doesn't exist. EPERM means it exists.
     public static func pidAlive(_ pid: Int32) -> Bool {
         guard pid > 0 else { return false }
+        #if os(Windows)
+        return WindowsProcessSource.pidAlive(pid)
+        #else
         if kill(pid, 0) == 0 { return true }
         return errno == EPERM
+        #endif
     }
 }

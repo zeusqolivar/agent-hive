@@ -74,7 +74,8 @@ public final class SkillsJobs: @unchecked Sendable {
         finishedAt = nil
         ok = nil
         lock.unlock()
-        Thread.detachNewThread { [self] in run(steps) }
+        let stepsToRun = steps
+        Thread.detachNewThread { [self] in run(stepsToRun) }
         return (200, JSON.object(JSONObject(["ok": true, "message": .string(label + ".")])).serialized())
     }
 
@@ -89,8 +90,7 @@ public final class SkillsJobs: @unchecked Sendable {
 
     private func run(_ steps: [[String]]) {
         var env = environment.filter { !$0.key.hasPrefix("CLAUDE") }
-        let home = paths.home.path
-        env["PATH"] = [home + "/.local/bin", "/opt/homebrew/bin", env["PATH"] ?? ""].joined(separator: ":")
+        env["PATH"] = ToolLocator.pathValue(home: paths.home, environment: env)
         var allOK = true
         for argv in steps {
             append("$ " + argv.map(Shell.quote).joined(separator: " "))
@@ -119,14 +119,8 @@ public struct ProcessJobRunner: JobRunner {
     public init() {}
 
     public func find(_ tool: String) -> URL? {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let path = ProcessInfo.processInfo.environment["PATH"] ?? ""
-        let dirs = [home + "/.local/bin", "/opt/homebrew/bin", "/usr/local/bin"] + path.split(separator: ":").map(String.init)
-        for dir in dirs where !dir.isEmpty {
-            let candidate = URL(filePath: dir).appending(path: tool)
-            if FileManager.default.isExecutableFile(atPath: candidate.path) { return candidate }
-        }
-        return nil
+        ToolLocator.find(tool, home: FileManager.default.homeDirectoryForCurrentUser,
+                         environment: ProcessInfo.processInfo.environment)
     }
 
     public func run(_ executable: URL, _ args: [String], environment: [String: String], directory: URL,
@@ -146,7 +140,13 @@ public struct ProcessJobRunner: JobRunner {
         }
         let timer = DispatchSource.makeTimerSource()
         timer.schedule(deadline: .now() + timeout)
-        timer.setEventHandler { if process.isRunning { kill(process.processIdentifier, SIGKILL) } }
+        timer.setEventHandler {
+            guard process.isRunning else { return }
+            process.terminate()
+            #if !os(Windows)
+            kill(process.processIdentifier, SIGKILL)  // terminate() only asks; this ends it.
+            #endif
+        }
         timer.resume()
         var buffer = Data()
         let reader = pipe.fileHandleForReading

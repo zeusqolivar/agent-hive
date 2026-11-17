@@ -79,7 +79,10 @@ public final class SubagentReader: @unchecked Sendable {
                                 description: Py.str(orEmpty: meta["description"]), state: state,
                                 startedAt: Int(born.rounded(.down)), lastTs: Int(mtime.rounded(.down)), path: log))
         }
-        return out.stableSorted { $0.lastTs > $1.lastTs }
+        // Newest activity first. Two agents whose logs were written in the same tick are ordered by id, so the
+        // order is the same on every filesystem: Windows timestamps are coarser than the Mac's and used to
+        // decide these ties by directory order.
+        return out.stableSorted { ($0.lastTs, $0.id) > ($1.lastTs, $1.id) }
     }
 
     /// Running subagents for the Classroom, at most 12.

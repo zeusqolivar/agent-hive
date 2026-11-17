@@ -78,7 +78,8 @@ import Testing
     @Test func missingOrMalformedFilesAreSkipped() throws {
         let home = try Fixture.prepare("connectors-home")
         try Data("{not json".utf8).write(to: home.appending(path: ".claude.json"))
-        try FileManager.default.removeItem(at: home.appending(path: ".cursor"))
+        // The fixture has no .cursor folder; removing one that isn't there is the point of the test.
+        try? FileManager.default.removeItem(at: home.appending(path: ".cursor"))
         let report = Self.report(home)
         let rows = Self.agent(report, "Claude Code")
         #expect(rows?.map { $0["name"]?.string } == ["notes-cloud", "charts"])
