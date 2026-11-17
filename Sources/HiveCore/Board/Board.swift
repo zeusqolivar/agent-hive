@@ -183,7 +183,7 @@ public actor Board {
 
     /// Waits, up to `timeout` seconds, for the first refresh. The app opens its page as it starts, so
     /// views that read the board once would otherwise see an empty one.
-    public func waitUntilReady(timeout: Double = 5) async {
+    public func waitUntilReady(timeout: Double = 15) async {
         let deadline = Date().addingTimeInterval(timeout)
         while !state.ready, loop != nil, Date() < deadline {
             try? await Task.sleep(for: .milliseconds(50))
