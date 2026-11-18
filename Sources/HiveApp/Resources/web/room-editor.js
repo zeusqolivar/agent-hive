@@ -37,6 +37,16 @@
       for(const p of spots) if(!add(kind, p.x, p.y)) return null;
       return `there is no free space for a ${c.label.toLowerCase()}`;
     }
+    // Adds desks at the given tiles as one change (one Undo), or changes nothing and says why.
+    function addDesks(spots){
+      let next = draft;
+      for(const p of spots){
+        const res = RoomModel.place(next, {id:RoomModel.newId(next, "desk"), kind:"desk", x:p.x, y:p.y});
+        if(!res.ok) return res.error;
+        next = res.room;
+      }
+      return next === draft ? null : commit(next);
+    }
     function remove(id){
       const res = RoomModel.remove(draft, id);
       if(!res.ok) return res.error;
@@ -79,7 +89,7 @@
     return {
       get draft(){ return draft; }, get selected(){ return selected; }, get canUndo(){ return history.length > 0; },
       select(id){ selected = id && kindOf(id) ? id : null; },
-      move, add, addNear, remove, nudge, setSize, setFloor, setWall, undo, importJSON, exportJSON,
+      move, add, addNear, addDesks, remove, nudge, setSize, setFloor, setWall, undo, importJSON, exportJSON,
     };
   }
 
@@ -140,6 +150,10 @@
         const arrows = CAT[sel.kind].zone === "wall" ? "Arrow keys move it along the back wall; up and down move it higher or lower." : angled ? "Arrow keys follow the room, not the screen: up moves it toward the back wall, however the room is turned." : "Arrow keys move it.";
         $("edSelHint").textContent = sel.kind === "door" ? arrows + " The room needs its door, so it can't be removed." : arrows + " Delete removes it.";
       } else box.hidden = true;
+      // The extra desks the live room adds when there are more sessions than desks, shown dashed on the room.
+      const ex = Room.extraDesks?.(d), n = ex?.extras.length || 0;
+      $("edExtras").hidden = !n;
+      if(n) $("edExtrasText").textContent = `You have ${ex.sessions} session${ex.sessions === 1 ? "" : "s"} and ${ex.desks} desk${ex.desks === 1 ? "" : "s"}, so ${n} extra desk${n === 1 ? " (dashed) is" : "s (dashed) are"} added where there's room. They aren't part of your arrangement until you add them.`;
       changed();
       for(const b of document.querySelectorAll("#roomEditor button, #roomEditor input, #roomEditor select")) if(!["edUndo", "edRemove", "edFloorTheme", "edWallTheme"].includes(b.id)) b.disabled = busy;
     }
@@ -231,6 +245,7 @@
     }, true);
 
     on($("edRemove"), "click", () => { if(session.selected) act(session.remove(session.selected)); });
+    on($("edExtrasAdd"), "click", () => { const ex = Room.extraDesks?.(session.draft); if(ex?.extras.length) act(session.addDesks(ex.extras)); });
     on($("edUndo"), "click", () => { session.undo(); say(""); show(); });
     const size = () => act(session.setSize(+$("edCols").value, +$("edRows").value));
     on($("edCols"), "change", size); on($("edRows"), "change", size);

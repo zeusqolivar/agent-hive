@@ -210,13 +210,52 @@
       const g = walkGrid(room, extras.concat({kind: "desk", x: c.x, y: c.y})), seen = reach(g, door);
       return placed.concat(extras, {x: c.x, y: c.y}).every(d => { const s = seatTile(d); return g.ok(s.x, s.y) && seen[s.y * room.cols + s.x]; });
     };
-    for(const margin of [true, false]){
-      for(const c of cands){
+    // Never in front of the chalkboard: not on the first three floor rows below it, counting the seat row.
+    const clearOfBoard = c => !room.items.some(b => b.kind === "board" && c.x < b.x + CATALOGUE.board.w && c.x + D.w > b.x && c.y - 1 < WALL_ROWS + 3);
+    const take = (list, margin) => {
+      for(const c of list){
         if(slots.length + extras.length >= want) break;
-        if(free(c, margin) && stillReachable(c)) extras.push({kind: "desk", x: c.x, y: c.y});
+        if(clearOfBoard(c) && free(c, margin) && stillReachable(c)) extras.push({kind: "desk", x: c.x, y: c.y});
+      }
+    };
+    // First, continue the placed desks' grid: their rows extended, then new rows in line in front or behind.
+    if(placed.length) take(gridSpots(placed, top, bottom, room.cols - D.w), false);
+    // Then any free floor, nearest the last placed desk.
+    for(const margin of [true, false]) take(cands, margin);
+    return slots.concat(extras.map(e => ({x: e.x, y: e.y, extra: true})));
+  }
+
+  // Desk positions on the grid the placed desks make, best first. The grid's spacing is the commonest gap between
+  // neighbours in a row (4 if no row has two desks) and between rows (3 if there's one row). A spot scores its
+  // distance in grid steps to the nearest placed desk, with a step between rows counting three times a step along
+  // one, so rows are extended before new rows are started. Ties go to the row nearer the front, then to the left.
+  function gridSpots(placed, top, bottom, maxX){
+    const commonest = (gaps, fallback) => {
+      const n = new Map();
+      for(const g of gaps) if(g > 0) n.set(g, (n.get(g) || 0) + 1);
+      let best = fallback, most = 0;
+      for(const [g, c] of [...n].sort((p, q) => p[0] - q[0])) if(c > most){ best = g; most = c; }
+      return best;
+    };
+    const rows = [...new Set(placed.map(d => d.y))].sort((p, q) => p - q);
+    const byRow = new Map(rows.map(y => [y, placed.filter(d => d.y === y).map(d => d.x).sort((p, q) => p - q)]));
+    const dx = commonest([...byRow.values()].flatMap(xs => xs.slice(1).map((x, i) => x - xs[i])), 4);
+    const dy = commonest(rows.slice(1).map((y, i) => y - rows[i]), CATALOGUE.desk.h + 1);
+    const mod = (a, m) => ((a % m) + m) % m;
+    // Each row keeps its own column phase; a new row takes the phase of the row it's next to.
+    const lines = rows.map(y => ({y, phase: mod(byRow.get(y)[0], dx)}));
+    for(let y = rows[0] - dy; y >= top; y -= dy) lines.push({y, phase: mod(byRow.get(rows[0])[0], dx)});
+    for(let y = rows[rows.length - 1] + dy; y <= bottom; y += dy) lines.push({y, phase: mod(byRow.get(rows[rows.length - 1])[0], dx)});
+    const out = [];
+    for(const {y, phase} of lines){
+      if(y < top || y > bottom) continue;
+      for(let x = phase; x <= maxX; x += dx){
+        if(placed.some(d => d.x === x && d.y === y)) continue;
+        const score = Math.min(...placed.map(d => Math.abs(x - d.x)/dx + 3*Math.abs(y - d.y)/dy));
+        out.push({x, y, score});
       }
     }
-    return slots.concat(extras.map(e => ({x: e.x, y: e.y, extra: true})));
+    return out.sort((p, q) => p.score - q.score || q.y - p.y || p.x - q.x);
   }
 
   // Walkable floor tiles where each activity happens: next to the items that offer it, the side facing the room first.

@@ -217,7 +217,7 @@ td a:hover{text-decoration:underline}
 #roomBox{flex:1;min-width:0;position:relative;overflow:auto;background:var(--bg)}
 #roomBox canvas{position:absolute;left:0;top:0;display:block}
 #roster{width:320px;flex:none;overflow-y:auto;border-left:1px solid var(--line);background:var(--panel);font-size:14px}
-#roster[hidden],#roomEditor[hidden],#editRoom[hidden]{display:none}
+#roster[hidden],#roomEditor[hidden],#editRoom[hidden],#roomEditor section[hidden]{display:none}
 #editRoom{position:absolute;top:10px;left:10px;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .room-ctl{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--raised);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .room-ctl button{all:unset;box-sizing:border-box;display:grid;place-items:center;min-width:30px;height:28px;padding:0 6px;border-radius:6px;color:var(--ink);cursor:pointer;font-weight:600;font-size:13px}
@@ -404,6 +404,7 @@ td a:hover{text-decoration:underline}
     <aside id="roomEditor" aria-label="Edit the room" hidden>
       <div class="ed-head"><h2>Edit the room</h2><p class="note">Drag things to move them. Click one to select it. Changes save as you make them.</p><p class="note warn" id="edNote" hidden></p></div>
       <p id="edStatus" role="status" aria-live="polite"></p>
+      <section id="edExtras" hidden><h3>Extra desks</h3><p class="note" id="edExtrasText"></p><div class="ed-row"><button class="btn" id="edExtrasAdd" type="button">Add them to the room</button></div></section>
       <section id="edSelected" hidden><h3 id="edSelName"></h3><p class="note" id="edSelHint"></p><div class="ed-row"><button class="btn" id="edRemove" type="button">Remove</button></div></section>
       <section><h3>Add</h3><p class="note">Drag onto the room, or click to add near the middle.</p><div class="ed-cat" id="edCatalogue" style="margin-top:8px"></div></section>
       <section><h3>Room</h3>

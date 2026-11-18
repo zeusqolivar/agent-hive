@@ -61,7 +61,7 @@ const Room = (() => {
     const mid = {x:room.cols/2, y:(RoomModel.WALL_ROWS + front)/2};
     stand.sort((p, q) => Math.hypot(p.x - mid.x, p.y - mid.y) - Math.hypot(q.x - mid.x, q.y - mid.y));
     const dt = RoomModel.doorTile(room) || {x:room.cols - 3, y:RoomModel.WALL_ROWS};
-    G = {room, grid, spots, slots, want, stand, door:centre(dt), ...frontOf(room)};
+    G = {room, grid, spots, slots, want, stand, door:centre(dt), naps:napSpots(room), ...frontOf(room)};
     dims();
   }
   // The fixed front of the room: the "needs you" mat, the queue on it, and your desk.
@@ -80,15 +80,47 @@ const Room = (() => {
     X0 = PADX + (rot % 2 ? r.cols : F)*HW; Y0 = TOP + WALLH;
     SW = (r.cols + F)*HW + 2*PADX; SH = (r.cols + F)*HH + TOP + WALLH + PADB;
   }
-  // A new room or desk count moves desks and spots, so everyone picks a destination again and walks there.
+  // A new room or desk count can move desks and spots. Only those whose destination moved or went pick again.
   function relayout(){
     build();
+    settle();
+    if(cv) size();
+  }
+  // Keeps each character's destination if it's still where it was (its desk, its nap spot, its activity spot);
+  // anyone whose destination moved or went away picks again. Each nap spot keeps one sleeper.
+  function settle(){
+    const near = (p, d) => p && Math.abs(p.x - d.x) < .5 && Math.abs(p.y - d.y) < .5, naps = new Set();
     for(const a of agents.values()){
       a.x = Math.max(20, Math.min(W - 20, a.x)); a.y = Math.max(RoomModel.WALL_ROWS*T + 10, Math.min(H - 20, a.y));
-      a.path = []; a.nextMove = 0; a.retry = 0;
-      if(!a.leaving) a.dest = null;
+      if(a.leaving) continue;
+      const d = a.dest;
+      let ok = false;
+      if(!d) ok = false;
+      else if(d.kind === "desk" || d.kind === "helper" || d.kind === "door"){ const home = seatOf(a); ok = home.kind === d.kind && near(home, d); }
+      else if(d.kind === "nap"){ ok = !!near(G.naps[d.i], d) && !naps.has(d.i); if(ok) naps.add(d.i); }
+      else if(d.kind === "queue") ok = true;    // plan() moves it along the queue if it needs to
+      else { const list = G.spots[d.kind] || []; ok = d.i < 0 ? list.length > 0 : !!near(list[d.i] && centre(list[d.i]), d); }
+      if(ok){ if(a.path.length) a.path = route(a, d); continue; }
+      a.path = []; a.nextMove = 0; a.retry = 0; a.dest = null;
     }
-    if(cv) size();
+  }
+  // Where sessions idle for hours sleep, in room units, one sleeper each: four lying on a rug (two rows of two),
+  // one on a beanbag, two on a couch. on says what they sit on, for how high to draw them.
+  function napSpots(room){
+    const out = [];
+    for(const it of room.items){
+      if(it.kind === "rug") for(const [dx, dy] of [[1.35, 1], [3.65, 1], [1.35, 2.3], [3.65, 2.3]]) out.push({x:(it.x + dx)*T, y:(it.y + dy)*T, on:"rug"});
+      else if(it.kind === "beanbag") out.push({x:(it.x + .5)*T, y:(it.y + .58)*T, on:"beanbag"});
+      else if(it.kind === "couch") for(const dx of [.9, 2.1]) out.push({x:(it.x + dx)*T, y:(it.y + 1.2)*T, on:"couch"});
+    }
+    return out;
+  }
+  // The nearest free nap spot, or null when they're all taken (then the session sleeps at its desk).
+  function napSlot(a){
+    const taken = new Set([...agents.values()].filter(o => o !== a && !o.leaving && o.dest?.kind === "nap").map(o => o.dest.i));
+    let best = null, bd = Infinity;
+    G.naps.forEach((p, i) => { if(taken.has(i)) return; const d = Math.hypot(p.x - a.x, p.y - a.y) + i*1e-3; if(d < bd){ bd = d; best = {kind:"nap", i, x:p.x, y:p.y, on:p.on}; } });
+    return best;
   }
 
   // Walks over free tiles. A character on a blocked tile (at its desk, or furniture moved under it) first steps to the nearest free one.
@@ -147,6 +179,7 @@ const Room = (() => {
   }
   function plan(a, now, queue){
     const s = a.s;
+    if(s.group !== "idle") a.napping = false;
     if(a.leaving){
       if(a.dest?.kind !== "door"){
         const parent = a.s.parent && agents.get(a.s.parent);
@@ -178,7 +211,8 @@ const Room = (() => {
     }
     const idleFor = Date.now()/1000 - (s.lastTs || 0);
     if(idleFor > NAP_AFTER){
-      if(a.dest?.kind !== "nap" && a.dest?.kind !== "desk"){ go(a, freeSlot("nap", a) || seatOf(a)); }
+      // Asleep: on a free nap spot, or at its own desk when they're all taken. A sleeper stays where it is.
+      if(a.dest?.kind !== "nap" && a.dest?.kind !== "desk"){ go(a, napSlot(a) || seatOf(a)); }
       a.napping = true;
       return;
     }
@@ -225,7 +259,9 @@ const Room = (() => {
     };
     for(const s of live){
       if(agents.has(s.id)) continue;
-      const seat = first ? seatOf({s}) : null;
+      // When the page opens, everyone starts where they belong: at their desk, or asleep on a nap spot.
+      let seat = first ? seatOf({s}) : null;
+      if(first && s.group === "idle" && Date.now()/1000 - (s.lastTs || 0) > NAP_AFTER) seat = napSlot({s, x:seat.x, y:seat.y}) || seat;
       make(s, first ? seat.x : G.door.x, first ? seat.y : G.door.y, first ? {dest:seat} : undefined);
     }
     for(const s of helpers){
@@ -1008,6 +1044,7 @@ const Room = (() => {
     if(d.kind === "desk" && !d.standing) return toward(0, -1);
     if(d.kind === "queue") return toward(0, 1);
     if(d.kind === "helper" && !d.standing) return toward(0, 1);
+    if(d.kind === "nap") return {face:a.seed % 2 ? 1 : -1, back:false};
     if(d.look === undefined){
       d.look = null;
       const want = d.kind, room = G.room;
@@ -1023,13 +1060,38 @@ const Room = (() => {
     if(d.look) return toward(d.look.x, d.look.y);
     return a.mx || a.my ? {...toward(a.mx, a.my), back:false} : {face:1, back:false};
   }
+  // Sleepers on a rug lie down, drawn a little smaller so two fit side by side.
+  const LIE = .78;
+  const lying = a => a.napping && !a.path.length && a.dest?.kind === "nap" && a.dest.on === "rug";
+  // How far a character's body is raised: on a chair or stool, on a beanbag or couch, or sitting on the floor asleep.
+  const NAP_SEAT = {rug:0, beanbag:13, couch:17};
+  function liftOf(a, sc, seated, stool){
+    if(seated) return 17 - 11*sc;
+    if(stool) return 11 - 11*sc;
+    if(a.napping && !a.path.length && a.dest?.kind === "nap") return (NAP_SEAT[a.dest.on] || 0) + 2 - 11*sc;
+    return 0;
+  }
   const stateColour = s => s.group === "needs" ? "#F5B700" : s.group === "working" ? hexv("--work", "#0B7480") : "#9AA3B5";
   function drawAgent(a, t, o){
     o = o || {};
     const c = ctx, s = a.s, walking = a.path.length > 0, ph = t*9 + a.seed, sc = s.isSub ? SUB : BIG;
     const seated = !!o.seated, stool = !!o.stool, nap = a.napping && !walking, pz = pose(a);
-    const p = R(a.x, a.y), bob = walking ? Math.abs(Math.sin(ph))*2.5 : 0, lift = seated ? 17 - 11*sc : stool ? 11 - 11*sc : 0;
+    const p = R(a.x, a.y), bob = walking ? Math.abs(Math.sin(ph))*2.5 : 0, lift = liftOf(a, sc, seated, stool);
     const picked = sel === s.id, hovered = hover === s.id, accent = hexv("--accent", "#2F4DB0");
+    if(lying(a)){
+      // Asleep on a rug: lying on its side, head one way or the other, on a long soft shadow.
+      const ls = LIE*sc/BIG, len = 90*ls, dir = a.seed % 2 ? 1 : -1;
+      c.save(); c.translate(p.x, p.y);
+      oval(0, 0, len/2 + 3, 7, css("--rm-shadow") || "rgba(0,0,0,.12)");
+      if(picked || hovered){ c.strokeStyle = accent; c.lineWidth = 2.4; c.globalAlpha = picked ? 1 : .75; c.beginPath(); c.ellipse(0, 0, len/2 + 8, 11, 0, 0, 7); c.stroke(); c.globalAlpha = 1; }
+      c.translate(-dir*len/2, -13*ls); c.rotate(dir*Math.PI/2); c.scale(ls, ls);
+      if(dir < 0) c.scale(-1, 1);
+      robot(a, t, {walking:false, seated:true, nap:true, back:false, halo:picked || hovered ? accent : null, ph});
+      c.restore();
+      const r = {x:p.x - len/2 - 4, y:p.y - 30*ls - 4, w:len + 8, h:30*ls + 10, id:s.id};
+      heads.push(r); hitList.push(r);
+      return;
+    }
     c.save(); c.translate(p.x, p.y);
     if(!seated && !stool){
       oval(0, 0, 15*sc + 2, 7*sc + 1, css("--rm-shadow") || "rgba(0,0,0,.12)");
@@ -1256,7 +1318,7 @@ const Room = (() => {
   // The part of the drawing in view, in drawing units.
   const shown = () => ({x0:-ox/k, y0:-oy/k, x1:(CW - ox)/k, y1:(CH - oy)/k});
   const fontOf = ts => (px, weight) => font(Math.round(px*ts), weight || 600);
-  const headOf = a => { const p = R(a.x, a.y), sc = a.s.isSub ? SUB : BIG, lift = !a.path.length && a.dest?.kind === "desk" && !a.dest.standing ? 17 - 11*sc : 0; return {x:p.x, y:p.y - lift - 92*sc}; };
+  const headOf = a => { if(lying(a)){ const p = R(a.x, a.y), len = 90*LIE*(a.s.isSub ? SUB : BIG)/BIG; return {x:p.x + (a.seed % 2 ? 1 : -1)*len*.42 - 10, y:p.y - 4}; } const p = R(a.x, a.y), sc = a.s.isSub ? SUB : BIG, lift = liftOf(a, sc, !a.path.length && a.dest?.kind === "desk" && !a.dest.standing, false); return {x:p.x, y:p.y - lift - 92*sc}; };
   function tail(at, w, h, to, fill, edge){
     const c = ctx, bx = Math.max(at.x + 10, Math.min(at.x + w - 10, to.x));
     if(to.y < at.y + h + 2) return;
@@ -1395,7 +1457,7 @@ const Room = (() => {
       if(a && a.s.group !== "needs") bubble(a);
     }
     // Sessions named elsewhere (their callout or bubble) get no plate.
-    G.slots.forEach((d, i) => { const o = owners.get(i); if(o && o.s.group !== "needs" && o.s.id !== sel && o.s.id !== hover) plate(d, o); });
+    G.slots.forEach((d, i) => { const o = owners.get(i); if(o && o.s.group !== "needs" && !o.napping && o.s.id !== sel && o.s.id !== hover) plate(d, o); });
   }
   // Edit mode: the draft with a tile grid, the fixed front shaded, characters frozen and faded, the selected item
   // outlined, and the item being dragged shown where it would go (red, with the reason, if it can't go there).
@@ -1403,7 +1465,9 @@ const Room = (() => {
     const room = draft, c = ctx, g = view.ghost, frontTop = room.rows - RoomModel.FRONT_ROWS;
     heads = []; hitList = []; placed = [];
     const visible = room.items.filter(it => CAT[it.kind] && !(g && g.id === it.id));
-    const desks = visible.filter(it => it.kind === "desk").map(d => ({x:d.x, y:d.y, extra:false}));
+    // The extra desks the live room would add for today's sessions, shown dashed so the editor matches what Done gives.
+    const extra = extrasFor(room);
+    const desks = visible.filter(it => it.kind === "desk").map(d => ({x:d.x, y:d.y, extra:false})).concat(extra);
     shell(room, desks, g?.id || null);
     for(const it of visible) if(CAT[it.kind].zone === "wall") drawWallItem(it, t, 2);
     // The grid over everywhere things can go; the front is fixed.
@@ -1435,6 +1499,14 @@ const Room = (() => {
       const d = thing(it.x + .05, it.y + .05, it.x + cat.w - .05, it.y + cat.h - .05, TALL[it.kind], () => { drawItem(it, t); editHits.push({id:it.id, poly:hull(it.x, it.y, it.x + cat.w, it.y + cat.h, TALL[it.kind])}); });
       list.push(d);
     }
+    for(const d of extra){
+      list.push(thing(d.x + .06, d.y + .04, d.x + 2.94, d.y + 1.08, TALL.desk, () => {
+        c.globalAlpha = .55; drawDesk(d, null, t); c.globalAlpha = 1;
+        // Not part of the arrangement: outlined in the accent colour, and never picked.
+        onFloor(() => { c.save(); c.setLineDash([9, 6]); c.strokeStyle = hexv("--accent", "#2F4DB0"); c.lineWidth = 3; c.beginPath(); c.roundRect(d.x*T + 3, d.y*T + 3, 3*T - 6, 2*T - 6, 6); c.stroke(); c.restore(); });
+      }));
+      list.push(thing(d.x + 1.18, d.y + 1.14, d.x + 1.82, d.y + 1.8, 40, () => { c.globalAlpha = .55; drawChair(d, null, t); c.globalAlpha = 1; }));
+    }
     const x0 = (W/2 - 220)/T, x1 = (W/2 + 220)/T;
     list.push(thing(x0, room.rows - 1.15, x1, room.rows - .25, 60, () => drawYourDesk(room)));
     for(const a of agents.values()) list.push(thing(a.x/T - .2, a.y/T - .2, a.x/T + .2, a.y/T + .2, 100, () => { c.globalAlpha = .3; drawAgent(a, t); c.globalAlpha = 1; }, 22));
@@ -1464,6 +1536,20 @@ const Room = (() => {
         box(x, y, w, h, 6, "#D23B3B"); c.fillStyle = "#FFFFFF"; c.fillText(text, x + w/2, y + h/2 + 4.5*textScale());
       }
     }
+  }
+  // The extra desks a room gets for the sessions in it now, as deskSlots places them live. Kept for the last room
+  // and count asked about, since the editor draws them every frame.
+  let extrasKey = "", extrasVal = [];
+  function extrasFor(room){
+    const want = needed(), key = want + "|" + room.cols + "x" + room.rows + "|" + JSON.stringify(room.items);
+    if(key !== extrasKey){ extrasKey = key; extrasVal = RoomModel.deskSlots(room, want).filter(d => d.extra); }
+    return extrasVal;
+  }
+  // For the editor: how many sessions there are, how many desks the room has, and where the extras would go.
+  function extraDesks(room){
+    const r = room || draft || G?.room;
+    if(!r) return {sessions:0, desks:0, extras:[]};
+    return {sessions:needed(), desks:r.items.filter(it => it.kind === "desk").length, extras:extrasFor(r).map(d => ({x:d.x, y:d.y}))};
   }
   // Where an item is on screen: a wall item's rectangle on the back wall, a floor item's footprint.
   const wallQuad = it => { const cat = CAT[it.kind], zt = (WR - it.y)*WZ, zb = (WR - it.y - cat.h)*WZ; return [P(it.x, WR, zt), P(it.x + cat.w, WR, zt), P(it.x + cat.w, WR, zb), P(it.x, WR, zb)]; };
@@ -1699,7 +1785,7 @@ const Room = (() => {
     if(cv && (!was !== !draft || was?.cols !== draft?.cols || was?.rows !== draft?.rows)) size();
     if(draft){ hover = null; pointerOn = null; const tip = document.getElementById("tip"); if(tip) tip.style.display = "none"; }
     else { editHits = null; if(cv) cv.style.cursor = "default"; }
-    if(!draft && was){ for(const a of agents.values()){ a.path = []; a.nextMove = 0; a.retry = 0; if(!a.leaving) a.dest = null; } }
+    if(!draft && was) settle();   // nobody moves unless their spot changed; setRoom() settles again for a saved room
   }
   // The tile under a pointer event, in room tiles: on the floor, or on the back wall above it when the back wall
   // is in view (straight on it faces you; angled, it's the far wall along b = 0 in the first turn and a = 0 in the last).
@@ -1723,6 +1809,6 @@ const Room = (() => {
   }
   const themeColour = name => { const v = css(name); return /^#[0-9a-f]{6}$/i.test(v) ? v : "#cccccc"; };
   return {init, update, setRoom, edit, tileAt, itemAt, themeColour, editing:() => !!draft, problem:() => problem, room:() => (G || (build(), G)).room, saved:() => saved,
-    rotate, setView, fit:fitView, zoom:f => zoomAt(CW/2, CH/2, f), view:() => ({...cam}),
+    extraDesks, rotate, setView, fit:fitView, zoom:f => zoomAt(CW/2, CH/2, f), view:() => ({...cam}),
     setActive(on){ if(on === active) return; active = on; if(on){ restore(); syncControls(); size(); requestAnimationFrame(frame); } }, select(id){ sel = id; }, highlight(id){ hover = id; pointerOn = null; }, say:a => textOf({s:a})};
 })();
