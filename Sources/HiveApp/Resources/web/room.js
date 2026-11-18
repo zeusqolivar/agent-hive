@@ -12,8 +12,11 @@ const Room = (() => {
   // first floor row (the wall rows of the grid are its height), the left wall along column 0.
   const HW = 32, HH = 16, WZ = 44, WALLH = WR * WZ, TOP = 34, PADX = 22, PADB = 30, SLAB = 12, THICK = .3;
   // How tall each standing item is drawn, for depth sorting and for picking it in the editor.
-  // Characters' scale: sessions and their subagents.
-  const BIG = 1.08, SUB = .66;
+  // The straight view: a front-facing three-quarter room. A tile is SX wide and SY deep (foreshortened), heights
+  // are drawn as they are, and the side walls are SIDE tiles thick.
+  const SX = HW, SY = HW*.78, SIDE = .45, S_PADX = 12, S_PADB = 16;
+  // Characters' scale: sessions and their subagents, a little smaller in the straight view where they're nearer.
+  let BIG = 1.08, SUB = .66;
   const TALL = {desk:62, shelf:48, plant:54, globe:74, machine:82, beanbag:28, couch:38, fountain:70, lamp:98, rug:0};
   const hash = s => { let h = 7; for(const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
   const hash2 = (a, b) => { let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263); h = Math.imul(h ^ h >>> 13, 1274126177); return (h ^ h >>> 16) >>> 0; };
@@ -27,8 +30,9 @@ const Room = (() => {
   // The camera: rot is the view (0 to 3, a quarter turn each), RC and RF the floor's size in tiles. cam holds what
   // the viewer chose: the turn, the zoom relative to fitting the canvas, and the floor point (tiles) at the centre,
   // or null for the fitted centre. kFit is the scale that fits the drawing in the canvas, CW and CH the canvas size.
-  let rot = 0, RC = 0, RF = 0, kFit = 1, CW = 0, CH = 0;
-  const cam = {rot:0, zoom:1, cx:null, cy:null};
+  let rot = 0, RC = 0, RF = 0, kFit = 1, CW = 0, CH = 0, straight = true;
+  // view: "straight" (front-facing, the default) or "angled" (isometric, in four turns).
+  const cam = {view:"straight", rot:0, zoom:1, cx:null, cy:null};
   const ZOOM_MIN = .6, ZOOM_MAX = 3;
   // Edit mode (room-editor.js): the draft being edited, and what to show on it ({selected, ghost}).
   let draft = null, view = {};
@@ -65,7 +69,13 @@ const Room = (() => {
   // The drawing's size follows the draft while editing, otherwise the room in use.
   function dims(){
     const r = draft || G.room, F = r.rows - WR;
-    W = r.cols*T; H = r.rows*T; RC = r.cols; RF = F; rot = cam.rot;
+    W = r.cols*T; H = r.rows*T; RC = r.cols; RF = F; rot = cam.rot; straight = cam.view !== "angled";
+    BIG = straight ? .92 : 1.08; SUB = straight ? .58 : .66;
+    if(straight){
+      X0 = S_PADX + SIDE*SX; Y0 = TOP + WALLH + THICK*SY;
+      SW = r.cols*SX + 2*X0; SH = Y0 + F*SY + SLAB + S_PADB;
+      return;
+    }
     // A quarter turn swaps the floor's sides, so the far corner moves; the drawing's size stays the same.
     X0 = PADX + (rot % 2 ? r.cols : F)*HW; Y0 = TOP + WALLH;
     SW = (r.cols + F)*HW + 2*PADX; SH = (r.cols + F)*HH + TOP + WALLH + PADB;
@@ -145,8 +155,10 @@ const Room = (() => {
       return;
     }
     if(s.group === "needs"){
-      const i = queue.indexOf(s.id), n = queue.length, step = Math.min(150, (W - 300) / Math.max(1, n - 1));   // wide enough for name tags side by side
-      const x = W/2 + (i - (n-1)/2) * step, y = G.queueY;
+      const i = queue.indexOf(s.id), n = queue.length;
+      let x, y = G.queueY;
+      if(straight) ({x, y} = queueSpot(i, n));
+      else { const step = Math.min(150, (W - 300) / Math.max(1, n - 1)); x = W/2 + (i - (n-1)/2) * step; }   // wide enough for name tags side by side
       if(a.dest?.kind !== "queue" || a.dest.x !== x || a.dest.y !== y) go(a, {kind:"queue", x, y});
       return;
     }
@@ -176,6 +188,13 @@ const Room = (() => {
     if(calm.matches){ if(a.dest?.kind !== "desk") go(a, seatOf(a)); return; }
     const kinds = ["stroll","stroll","stroll","stroll","read","desk"], pick = kinds[Math.floor(Math.random()*kinds.length)];
     go(a, pick === "desk" ? seatOf(a) : freeSlot(pick, a) || seatOf(a));
+  }
+  // Straight on, the queue stands on the needs-you mat beside your desk (which would hide anyone behind it):
+  // first on the left, then the right, then further out, spaced so neighbours and their callouts don't overlap.
+  function queueSpot(i, n){
+    const half = 220, gap = 70, edge = 150, side = i % 2 ? 1 : -1, k = Math.floor(i/2), each = Math.ceil(n/2);
+    const room = W/2 - half - gap - edge, step = Math.min(160, each > 1 ? room/(each - 1) : 160);
+    return {x:W/2 + side*(half + gap + k*step), y:G.matTop + 40};   // the back half, so the mat's lettering shows in front
   }
   function update(b){
     board = b;
@@ -265,10 +284,14 @@ const Room = (() => {
   // Turned-frame (a, b) and height z to drawing units.
   const Q = (a, b, z) => ({x:X0 + (a - b)*HW, y:Y0 + (a + b)*HH - (z || 0)});
   // Tiles (x, y) and height z to drawing units; R() takes room units.
-  const P = (tx, ty, z) => { const [a, b] = turn(tx, ty - WR); return Q(a, b, z); };
+  const P = (tx, ty, z) => {
+    if(straight) return {x:X0 + tx*SX, y:Y0 + (ty - WR)*SY - (z || 0)};
+    const [a, b] = turn(tx, ty - WR); return Q(a, b, z);
+  };
   const R = (x, y, z) => P(x/T, y/T, z);
   // The floor point (tiles) drawn at a drawing-unit point.
   function floorAt(sx, sy){
+    if(straight) return {x:(sx - X0)/SX, y:(sy - Y0)/SY + WR};
     const p = (sx - X0)/HW, q = (sy - Y0)/HH, [u, v] = unturn((p + q)/2, (q - p)/2);
     return {x:u, y:v + WR};
   }
@@ -284,10 +307,21 @@ const Room = (() => {
     if(stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
   }
   // The outline of a box standing on the floor, x0..x1 by y0..y1 tiles and h units high.
-  const hull = (x0, y0, x1, y1, h) => { const r = turnBox(x0, y0, x1, y1); return [Q(r.a0, r.b0, h), Q(r.a1, r.b0, h), Q(r.a1, r.b0, 0), Q(r.a1, r.b1, 0), Q(r.a0, r.b1, 0), Q(r.a0, r.b1, h)]; };
+  const hull = (x0, y0, x1, y1, h) => { if(straight) return [P(x0, y0, h), P(x1, y0, h), P(x1, y1, 0), P(x0, y1, 0)]; const r = turnBox(x0, y0, x1, y1); return [Q(r.a0, r.b0, h), Q(r.a1, r.b0, h), Q(r.a1, r.b0, 0), Q(r.a1, r.b1, 0), Q(r.a0, r.b1, 0), Q(r.a0, r.b1, h)]; };
   // A box: lit top, the face toward the front left in the base colour, the face toward the front right in shade.
   function prism(x0, y0, x1, y1, z0, z1, base, o){
     o = o || {};
+    if(straight){
+      // Straight on: the top and the front.
+      const a = P(x0, y0, z1), b = P(x1, y0, z1), c = P(x1, y1, z1), d = P(x0, y1, z1), f = P(x1, y1, z0), g = P(x0, y1, z0);
+      poly([g, f, c, d], o.left || base);
+      poly([a, b, c, d], o.top || lit(base, .14));
+      if(o.line === false) return;
+      ctx.lineJoin = "round";
+      poly([a, b, f, g], null, o.line || dim(base, .5), .9);
+      ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(c.x, c.y); ctx.strokeStyle = lit(base, .28); ctx.lineWidth = .7; ctx.stroke();
+      return;
+    }
     const r = turnBox(x0, y0, x1, y1);
     const a = Q(r.a0, r.b0, z1), b = Q(r.a1, r.b0, z1), c = Q(r.a1, r.b1, z1), d = Q(r.a0, r.b1, z1), e = Q(r.a1, r.b0, z0), f = Q(r.a1, r.b1, z0), g = Q(r.a0, r.b1, z0);
     poly([e, f, c, b], o.right || dim(base, .22));
@@ -299,7 +333,7 @@ const Room = (() => {
     ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(c.x, c.y); ctx.lineTo(b.x, b.y); ctx.strokeStyle = lit(base, .28); ctx.lineWidth = .7; ctx.stroke();
   }
   // Draws parts of one thing back to front for this view: each is [x, y, draw], with its middle in tiles.
-  const depth = (x, y) => { const [a, b] = turn(x, y - WR); return a + b; };
+  const depth = (x, y) => { if(straight) return y + x*1e-3; const [a, b] = turn(x, y - WR); return a + b; };
   function inOrder(parts){ parts.sort((p, q) => depth(p[0], p[1]) - depth(q[0], q[1])).forEach(p => p[2]()); }
   function plane(m, fn){ ctx.save(); ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]); fn(); ctx.restore(); }
   // Drawing on an upright face of a box or a wall. n is the face's outward direction ("x+", "x-", "y+", "y-") and
@@ -307,12 +341,12 @@ const Room = (() => {
   // x on a y+ face, -y on an x+ face, y on an x- face, -x on a y- face), and y is minus the height. A face turned
   // away from the viewer isn't drawn; the result says whether it was.
   const NORMAL = {"x+":[1, 0], "x-":[-1, 0], "y+":[0, 1], "y-":[0, -1]};
-  function facing(n){ const [da, db] = turnDir(...NORMAL[n]); return da > 0 ? "a" : db > 0 ? "b" : null; }
+  function facing(n){ if(straight) return n === "y+" ? "f" : null; const [da, db] = turnDir(...NORMAL[n]); return da > 0 ? "a" : db > 0 ? "b" : null; }
   function face(n, at, fn){
     const side = facing(n);
     if(!side) return false;
     const o = n[0] === "x" ? P(at, 0, 0) : P(0, at, 0);
-    plane([1, side === "b" ? .5 : -.5, 0, 1, o.x, o.y], fn);
+    plane([1, side === "f" ? 0 : side === "b" ? .5 : -.5, 0, 1, o.x, o.y], fn);
     return true;
   }
   const faceY = (ty, fn) => face("y+", ty, fn);
@@ -354,7 +388,7 @@ const Room = (() => {
   // The floor, walls, wall items, rugs and the shadows under furniture don't move, so they're drawn once into an
   // offscreen canvas and copied each frame. hide: an item left out (the one being dragged in the editor).
   function shell(room, desks, hide){
-    const key = [themeGen, rot, cv.width, cv.height, k, ox, oy, hide || "", !!draft, JSON.stringify(room), desks.map(d => d.x + "," + d.y + (d.extra ? "e" : "")).join(";")].join("|");
+    const key = [themeGen, rot, straight, cv.width, cv.height, k, ox, oy, hide || "", !!draft, JSON.stringify(room), desks.map(d => d.x + "," + d.y + (d.extra ? "e" : "")).join(";")].join("|");
     if(key !== layerKey){
       layerKey = key;
       if(layer.width !== cv.width || layer.height !== cv.height){ layer.width = cv.width; layer.height = cv.height; }
@@ -382,8 +416,11 @@ const Room = (() => {
     const edge = room.floor.color ? dim(base, .5) : hexv("--rm-slab", "#7A5536");
     // The floor's cut edge along the two near sides of the room.
     const A = rot % 2 ? rows - WR : cols, B = rot % 2 ? cols : rows - WR;
-    poly([Q(0, B, 0), Q(A, B, 0), Q(A, B, -SLAB), Q(0, B, -SLAB)], edge);
-    poly([Q(A, 0, 0), Q(A, B, 0), Q(A, B, -SLAB), Q(A, 0, -SLAB)], dim(edge, .3));
+    if(straight) poly([P(0, rows, 0), P(cols, rows, 0), P(cols, rows, -SLAB), P(0, rows, -SLAB)], edge);
+    else {
+      poly([Q(0, B, 0), Q(A, B, 0), Q(A, B, -SLAB), Q(0, B, -SLAB)], edge);
+      poly([Q(A, 0, 0), Q(A, B, 0), Q(A, B, -SLAB), Q(A, 0, -SLAB)], dim(edge, .3));
+    }
     onFloor(() => {
       const y0 = WR*T, x1 = cols*T, y1 = rows*T, style = room.floor.style;
       c.save(); c.beginPath(); c.rect(0, y0, x1, y1 - y0); c.clip();
@@ -431,8 +468,14 @@ const Room = (() => {
       c.fillStyle = hexv("--rm-trim", "#6E4B33"); c.fillRect(0, ft - 2, x1, 4);
       c.restore();
     });
-    // Darker where the floor meets the two far walls.
-    onFloorTurned(() => {
+    // Darker where the floor meets the walls: the back wall and both sides straight on, the two far walls angled.
+    if(straight) onFloor(() => {
+      const y0 = WR*T, x1 = cols*T, y1 = rows*T;
+      let g = c.createLinearGradient(0, y0, 0, y0 + 44); g.addColorStop(0, "rgba(20,10,0,.28)"); g.addColorStop(1, "rgba(20,10,0,0)");
+      c.fillStyle = g; c.fillRect(0, y0, x1, 44);
+      for(const [xa, xb] of [[0, 30], [x1, x1 - 30]]){ g = c.createLinearGradient(xa, 0, xb, 0); g.addColorStop(0, "rgba(20,10,0,.2)"); g.addColorStop(1, "rgba(20,10,0,0)"); c.fillStyle = g; c.fillRect(Math.min(xa, xb), y0, 30, y1 - y0); }
+    });
+    else onFloorTurned(() => {
       let g = c.createLinearGradient(0, 0, 0, 44); g.addColorStop(0, "rgba(20,10,0,.26)"); g.addColorStop(1, "rgba(20,10,0,0)");
       c.fillStyle = g; c.fillRect(0, 0, A*T, 44);
       g = c.createLinearGradient(0, 0, 44, 0); g.addColorStop(0, "rgba(20,10,0,.22)"); g.addColorStop(1, "rgba(20,10,0,0)");
@@ -443,6 +486,7 @@ const Room = (() => {
   // the face (see face()), side "a" or "b" for which way it faces, back whether it's the back wall (the one with
   // the wall items). The two near walls are cut away.
   function farWalls(room){
+    if(straight) return [{n:"y+", at:WR, s0:0, s1:room.cols, back:true, side:"f"}];
     const all = [{n:"y+", at:WR, s0:0, s1:room.cols, back:true}, {n:"x+", at:0, s0:-room.rows, s1:-WR}, {n:"x-", at:room.cols, s0:WR, s1:room.rows}, {n:"y-", at:room.rows, s0:-room.cols, s1:0}];
     return all.map(w => ({...w, side:facing(w.n)})).filter(w => w.side);
   }
@@ -488,9 +532,21 @@ const Room = (() => {
         }
       });
     }
+    const cap = lit(base, .35), end = dim(base, .3);
+    if(straight){
+      // The corner by the right side wall, shaded like the left one; the back wall's top; the side walls, seen
+      // end-on from the front as their tops and their cut ends.
+      face("y+", WR, () => { const g = c.createLinearGradient(cols*HW, 0, cols*HW - 40, 0); g.addColorStop(0, "rgba(10,5,0,.22)"); g.addColorStop(1, "rgba(10,5,0,0)"); c.fillStyle = g; c.fillRect(cols*HW - 40, -WALLH, 40, WALLH); });
+      poly([P(-SIDE, WR - THICK, WALLH), P(cols + SIDE, WR - THICK, WALLH), P(cols + SIDE, WR, WALLH), P(-SIDE, WR, WALLH)], cap);
+      for(const [xa, xb] of [[-SIDE, 0], [cols, cols + SIDE]]){
+        poly([P(xa, WR, WALLH), P(xb, WR, WALLH), P(xb, rows, WALLH), P(xa, rows, WALLH)], cap);
+        poly([P(xa, rows, WALLH), P(xb, rows, WALLH), P(xb, rows, -SLAB), P(xa, rows, -SLAB)], end);
+        c.fillStyle = "rgba(0,0,0,.18)"; const e = P(xa === 0 || xa > 0 ? xa : xb, WR, WALLH); c.fillRect(xa >= 0 ? e.x : e.x - 1.2, e.y, 1.2, P(0, rows, WALLH).y - e.y);
+      }
+      return;
+    }
     // The walls' thickness, seen on top and at the cut ends, in the turned frame.
     const A = rot % 2 ? rows - WR : cols, B = rot % 2 ? cols : rows - WR;
-    const cap = lit(base, .35), end = dim(base, .3);
     poly([Q(-THICK, -THICK, WALLH), Q(A, -THICK, WALLH), Q(A, 0, WALLH), Q(0, 0, WALLH)], cap);
     poly([Q(-THICK, -THICK, WALLH), Q(0, 0, WALLH), Q(0, B, WALLH), Q(-THICK, B, WALLH)], cap);
     poly([Q(A, -THICK, -SLAB), Q(A, 0, -SLAB), Q(A, 0, WALLH), Q(A, -THICK, WALLH)], end);
@@ -522,7 +578,8 @@ const Room = (() => {
       c.setLineDash([2, 6]); c.lineWidth = 1.5; c.beginPath(); c.roundRect(x + 14, y + 14, w - 28, h - 28, 7); c.stroke(); c.setLineDash([]);
     });
     // Painted on the mat, reading along it from its left end in this view.
-    matLabel = floorText("Needs you", x + 30, x + w - 30, y + h/2, font(30, 700), hexv("--rm-mat-ink", "#5A4300"), "start");
+    // Straight on, the queue stands on the back half of the mat, so the lettering goes along the front half.
+    matLabel = floorText("Needs you", x + 30, x + w - 30, straight ? y + h - 27 : y + h/2, font(30, 700), hexv("--rm-mat-ink", "#5A4300"), "start");
   }
   // Text painted on the floor along the room's x axis, turned so it reads left to right in this view. It starts at
   // whichever of x0, x1 (room units) is on the left ("start") or ends at whichever is on the right ("end"), centred
@@ -691,7 +748,7 @@ const Room = (() => {
     const it = room.items.find(i => i.kind === "door");
     doorLabel = null;
     if(!it) return;
-    const c = ctx, at = backShown() ? P(it.x + CAT.door.w/2, WR, WALLH + 46) : P(it.x + CAT.door.w/2, WR + .4, 30), ts = textScale(), text = `${board?.counts?.ended || 0} went home`;
+    const c = ctx, at = backShown() ? P(it.x + CAT.door.w/2, WR, WALLH + (straight ? 16 : 46)) : P(it.x + CAT.door.w/2, WR + .4, 30), ts = textScale(), text = `${board?.counts?.ended || 0} went home`;
     c.font = font(Math.round(12*ts), 600); c.textAlign = "center";
     const w = c.measureText(text).width;
     if(!backShown()) box(at.x - w/2 - 6, at.y - 13*ts, w + 12, 17*ts, 5, alpha(hexv("--rm-panel", "#FFFDF8"), .85));
@@ -727,16 +784,19 @@ const Room = (() => {
       }],
     ]);
     prism(x + .1, y + .06, x + 2.9, y + 1.06, zt - 4, zt, wood);
-    // On top: something of its owner's, the screen (facing the chair), the keyboard and the lamp.
-    const kind = hash2(x, y) % 4;
+    // On top: something of its owner's, the screen (facing the chair), the keyboard and the lamp. Straight on, the
+    // screen moves left and the keepsake right, so the sitter's head doesn't hide the screen.
+    const kind = hash2(x, y) % 4, sx = x, mx = straight ? -.62 : 0, dx = straight ? 1.55 : 0;
     inOrder([
-      [x + .5, y + .7, () => {
-        if(kind === 0){ prism(x + .3, y + .55, x + .72, y + .86, zt, zt + 3, BODY[(x + y) % 8], {line:false}); prism(x + .34, y + .52, x + .7, y + .82, zt + 3, zt + 6, lit(BODY[(x*3 + y) % 8], .1), {line:false}); }
+      [x + .5 + dx, y + .7, () => {
+        const x = sx + dx;
+        if(kind === 0){ prism(x + .3, y + .55, x + .72, y + .86, zt, zt + 3, BODY[(sx + y) % 8], {line:false}); prism(x + .34, y + .52, x + .7, y + .82, zt + 3, zt + 6, lit(BODY[(sx*3 + y) % 8], .1), {line:false}); }
         else if(kind === 1) cylinder(x + .5, y + .7, 4, zt, zt + 8, "#E9E2D2", "#6B4A33");
         else if(kind === 2){ cylinder(x + .48, y + .66, 5, zt, zt + 7, hexv("--rm-pot", "#C8693F")); const p = P(x + .48, y + .66, zt + 7); for(const [dx, dy] of [[-4, -6], [0, -9], [4, -6]]) oval(p.x + dx, p.y + dy, 3.2, 5, hexv("--rm-leaf2", "#80B657")); }
         else { const p = [P(x + .28, y + .48, zt + .5), P(x + .78, y + .48, zt + .5), P(x + .78, y + .92, zt + .5), P(x + .28, y + .92, zt + .5)]; poly(p, "#F6F2E8", "rgba(0,0,0,.15)", .6); }
       }],
-      [x + 1.5, y + .4, () => {
+      [x + 1.5 + mx, y + .4, () => {
+        const x = sx + mx;
         prism(x + 1.3, y + .34, x + 1.7, y + .5, zt, zt + 1.5, metal, {line:false});
         prism(x + 1.46, y + .38, x + 1.54, y + .44, zt + 1.5, zt + 10, metal, {line:false});
         prism(x + .98, y + .34, x + 2.02, y + .42, zt + 8, zt + 33, dark, {line:dim(dark, .4)});
@@ -939,7 +999,9 @@ const Room = (() => {
   // Which way a character faces: walking, the way it's going; seated, toward the board; queued, toward you;
   // at an activity, toward the item it's using.
   // A direction in the room (tiles) as a sprite pose for this view: mirrored or not, and seen from behind or not.
-  function toward(dx, dy){ const [da, db] = turnDir(dx, dy); return {face:da - db < 0 ? -1 : 1, back:da + db < 0}; }
+  function toward(dx, dy){
+    if(straight) return {face:dx < -.05 ? -1 : 1, back:dy < 0 && Math.abs(dy) >= Math.abs(dx)*.5};
+    const [da, db] = turnDir(dx, dy); return {face:da - db < 0 ? -1 : 1, back:da + db < 0}; }
   function pose(a){
     const walking = a.path.length > 0, d = a.dest;
     if(walking || !d) return a.mx || a.my ? toward(a.mx, a.my) : {face:1, back:false};
@@ -1065,17 +1127,20 @@ const Room = (() => {
   // A thing to draw: its floor box in tiles (x0..x1, y0..y1), how far it reaches on screen, and how to draw it.
   // The box is kept in the turned frame, so order() works the same in every view.
   function thing(x0, y0, x1, y1, h, f, pad){
+    if(straight){ const top = P(x0, y0, h), bot = P(x0, y1, 0); return {x0, y0, x1, y1, h, sx0:P(x0, 0).x - (pad || 0), sx1:P(x1, 0).x + (pad || 0), sy0:top.y - 6, sy1:bot.y + 6, f}; }
     const r = turnBox(x0, y0, x1, y1), a = Q(r.a0, r.b1), b = Q(r.a1, r.b0), top = Q(r.a0, r.b0, h), bot = Q(r.a1, r.b1);
     return {x0:r.a0, y0:r.b0, x1:r.a1, y1:r.b1, sx0:a.x - (pad || 0), sx1:b.x + (pad || 0), sy0:top.y - 6, sy1:bot.y + 6, f};
   }
   // Back to front. Where two things overlap on screen, the one whose floor box is wholly behind the other's on
   // either axis is drawn first; boxes that overlap on the floor go by the middle of their boxes.
   function order(list){
-    const n = list.length, before = Array.from({length:n}, () => []), mid = d => d.x0 + d.x1 + d.y0 + d.y1;
+    // Straight on, only y says what's in front (then height); in the angled view either axis can.
+    const n = list.length, before = Array.from({length:n}, () => []);
+    const mid = straight ? d => d.y0 + d.y1 + (d.h || 0)*1e-4 : d => d.x0 + d.x1 + d.y0 + d.y1;
     for(let i = 0; i < n; i++) for(let j = i + 1; j < n; j++){
       const A = list[i], B = list[j];
       if(A.sx1 <= B.sx0 || B.sx1 <= A.sx0 || A.sy1 <= B.sy0 || B.sy1 <= A.sy0) continue;
-      const ab = A.x1 <= B.x0 + 1e-6 || A.y1 <= B.y0 + 1e-6, ba = B.x1 <= A.x0 + 1e-6 || B.y1 <= A.y0 + 1e-6;
+      const ab = (!straight && A.x1 <= B.x0 + 1e-6) || A.y1 <= B.y0 + 1e-6, ba = (!straight && B.x1 <= A.x0 + 1e-6) || B.y1 <= A.y0 + 1e-6;
       const aFirst = ab !== ba ? ab : mid(A) <= mid(B);
       if(aFirst) before[j].push(i); else before[i].push(j);
     }
@@ -1089,6 +1154,7 @@ const Room = (() => {
 
   // Evening: the whole room dims, then lamps, working desks and the board's light add warm pools.
   function roomOutline(room){
+    if(straight){ trace([P(-SIDE, WR - THICK, WALLH), P(room.cols + SIDE, WR - THICK, WALLH), P(room.cols + SIDE, room.rows, -SLAB), P(-SIDE, room.rows, -SLAB)]); return; }
     const A = rot % 2 ? room.rows - WR : room.cols, B = rot % 2 ? room.cols : room.rows - WR;
     trace([Q(-THICK, B, WALLH), Q(-THICK, -THICK, WALLH), Q(A, -THICK, WALLH), Q(A, 0, -SLAB), Q(A, B, -SLAB), Q(0, B, -SLAB), Q(-THICK, B, -SLAB)]);
   }
@@ -1246,7 +1312,8 @@ const Room = (() => {
     // On the desk top's front corner in this view, a little way in.
     const corners = [[slot.x + .1, slot.y + .06], [slot.x + 2.9, slot.y + .06], [slot.x + .1, slot.y + 1.06], [slot.x + 2.9, slot.y + 1.06]];
     const [fx, fy] = corners.reduce((m, q) => depth(q[0], q[1]) > depth(m[0], m[1]) ? q : m);
-    const w = c.measureText(name).width + 14, h = 15*ts, at = P(fx + (slot.x + 1.5 - fx)*.3, fy + (slot.y + .56 - fy)*.3, 10);
+    // Straight on, the sitter covers the desk's front, so the plate goes on the floor in front of the chair.
+    const w = c.measureText(name).width + 14, h = 15*ts, at = straight ? P(slot.x + 1.5, slot.y + 2.05, -h/2 - 3) : P(fx + (slot.x + 1.5 - fx)*.3, fy + (slot.y + .56 - fy)*.3, 10);
     if(w > 4*HW) return;   // zoomed out so far that the plate would be wider than the desk
     const r = {x:at.x - w/2, y:at.y - h/2, w, h}, v = shown();
     if(r.x < v.x0 + 2 || r.x + w > v.x1 - 2 || r.y < v.y0 + 2 || r.y + h > v.y1 - 2 || hits(r, placed, 2) || hits(r, keepOut, 2) || hits(r, heads.filter(q => q.id !== s.id), 0)) return;
@@ -1320,6 +1387,7 @@ const Room = (() => {
     if(!n.needs){ const geo = frontOf(room); message("Nobody is waiting on you right now.", R(Math.min(W - 9*T, W/2 + 9*T), (geo.matTop + geo.matBottom)/2)); }
     if(board?.ready && !agents.size && G.slots[0]){ const d = G.slots[0]; message("No sessions are open, so the room is empty.", P(d.x + 1.5, d.y - 1.2, 0)); }
     const live = [...agents.values()].filter(a => !a.leaving);
+    live.forEach(a => drawZ(a, t));   // under the bubbles
     live.filter(a => a.s.group === "needs" && !a.s.isSub).sort((p, q) => q.y - p.y || p.seed - q.seed).forEach(needBubble);
     for(const id of [sel, hover]){
       if(!id || (id === hover && id === pointerOn)) continue;
@@ -1328,7 +1396,6 @@ const Room = (() => {
     }
     // Sessions named elsewhere (their callout or bubble) get no plate.
     G.slots.forEach((d, i) => { const o = owners.get(i); if(o && o.s.group !== "needs" && o.s.id !== sel && o.s.id !== hover) plate(d, o); });
-    live.forEach(a => drawZ(a, t));
   }
   // Edit mode: the draft with a tile grid, the fixed front shaded, characters frozen and faded, the selected item
   // outlined, and the item being dragged shown where it would go (red, with the reason, if it can't go there).
@@ -1447,6 +1514,7 @@ const Room = (() => {
   function applyView(){
     if(!G || !CW) return;
     dims();
+    kFit = Math.min(CW/SW, CH/SH);
     k = kFit*cam.zoom;
     let d = cam.cx === null ? {x:SW/2, y:SH/2} : P(cam.cx, cam.cy, 0);
     const vw = CW/k, vh = CH/k, mx = .2*Math.min(SW, vw), my = .2*Math.min(SH, vh);
@@ -1465,6 +1533,7 @@ const Room = (() => {
     try {
       const v = JSON.parse(localStorage.getItem(VIEW_KEY) || "null");
       if(!v || typeof v !== "object") return;
+      cam.view = v.view === "angled" ? "angled" : "straight";
       cam.rot = [0, 1, 2, 3].includes(v.rot) ? v.rot : 0;
       cam.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number(v.zoom) || 1));
       const ok = Number.isFinite(v.cx) && Number.isFinite(v.cy);
@@ -1494,13 +1563,31 @@ const Room = (() => {
   const snap = document.createElement("canvas"), still = document.createElement("canvas");
   let turning = null;
   function rotate(dir){
-    if(!cv || !G) return;
+    if(!cv || !G || cam.view !== "angled") return;
     applyView();
     if(!calm.matches && cv.width){ snap.width = cv.width; snap.height = cv.height; snap.getContext("2d").drawImage(cv, 0, 0); turning = {from:performance.now(), dir}; }
     const f = middle(), fitted = cam.cx === null;
     cam.rot = (cam.rot + dir + 4) % 4;
     if(!fitted){ cam.cx = f.x; cam.cy = f.y; }
     applyView(); store();
+  }
+  // Switches between the straight and the angled view, keeping the same floor point in the middle.
+  function setView(v){
+    v = v === "angled" ? "angled" : "straight";
+    if(!cv || !G || v === cam.view){ cam.view = v; syncControls(); return; }
+    applyView();
+    if(!calm.matches && cv.width){ snap.width = cv.width; snap.height = cv.height; snap.getContext("2d").drawImage(cv, 0, 0); turning = {from:performance.now(), dir:0}; }
+    const f = middle(), fitted = cam.cx === null;
+    cam.view = v;
+    if(!fitted){ cam.cx = f.x; cam.cy = f.y; }
+    size(); store(); syncControls();   // the two views differ in size, so the fitted scale changes
+  }
+  // The view buttons: which view is pressed, and the turn buttons only in the angled view.
+  function syncControls(){
+    const angled = cam.view === "angled", $ = id => document.getElementById(id);
+    $("roomViewStraight")?.setAttribute("aria-pressed", String(!angled));
+    $("roomViewAngled")?.setAttribute("aria-pressed", String(angled));
+    for(const id of ["roomRotL", "roomRotR", "roomRotSep"]){ const el = $(id); if(el) el.hidden = !angled; }
   }
   // The turn's animation: the old view swings out and fades while the new one swings in, over 250 ms.
   function turnEffect(){
@@ -1588,7 +1675,7 @@ const Room = (() => {
         if(!el || el === document.body || el === cv){ e.preventDefault(); if(!spaceHeld){ spaceHeld = true; cv.style.cursor = "grab"; } }
         return;
       }
-      if((e.key === "[" || e.key === "]") && !document.querySelector("dialog[open]")){ e.preventDefault(); rotate(e.key === "]" ? 1 : -1); }
+      if((e.key === "[" || e.key === "]") && cam.view === "angled" && !document.querySelector("dialog[open]")){ e.preventDefault(); rotate(e.key === "]" ? 1 : -1); }
     });
     addEventListener("keyup", e => { if(e.key === " " && spaceHeld){ spaceHeld = false; if(!pan) cv.style.cursor = "default"; } });
     addEventListener("blur", () => { spaceHeld = false; });
@@ -1599,6 +1686,9 @@ const Room = (() => {
     on("roomZoomIn", () => zoomAt(CW/2, CH/2, 1.25));
     on("roomZoomOut", () => zoomAt(CW/2, CH/2, .8));
     on("roomFit", fitView);
+    on("roomViewStraight", () => setView("straight"));
+    on("roomViewAngled", () => setView("angled"));
+    syncControls();
   }
   // Enters edit mode with a draft room, or leaves it with null. view: {selected: id, ghost: {id, kind, x, y, bad}}.
   function edit(d, v){
@@ -1612,12 +1702,13 @@ const Room = (() => {
     if(!draft && was){ for(const a of agents.values()){ a.path = []; a.nextMove = 0; a.retry = 0; if(!a.leaving) a.dest = null; } }
   }
   // The tile under a pointer event, in room tiles: on the floor, or on the back wall above it when the back wall
-  // is in view (it's the far wall along b = 0 in the first view and along a = 0 in the last).
+  // is in view (straight on it faces you; angled, it's the far wall along b = 0 in the first turn and a = 0 in the last).
   function tileAt(e){
     const p = local(e), f = floorAt(p.x, p.y);
     if(f.y >= WR || !backShown()) return {x:Math.floor(f.x), y:Math.floor(f.y)};
     let x, z;
-    if(rot === 0){ const a = (p.x - X0)/HW; x = a; z = Y0 + a*HH - p.y; }
+    if(straight){ x = f.x; z = Y0 - p.y; }
+    else if(rot === 0){ const a = (p.x - X0)/HW; x = a; z = Y0 + a*HH - p.y; }
     else { const b = (X0 - p.x)/HW; x = unturn(0, b)[0]; z = Y0 + b*HH - p.y; }
     return {x:Math.floor(x), y:Math.floor(WR - z/WZ)};
   }
@@ -1632,6 +1723,6 @@ const Room = (() => {
   }
   const themeColour = name => { const v = css(name); return /^#[0-9a-f]{6}$/i.test(v) ? v : "#cccccc"; };
   return {init, update, setRoom, edit, tileAt, itemAt, themeColour, editing:() => !!draft, problem:() => problem, room:() => (G || (build(), G)).room, saved:() => saved,
-    rotate, fit:fitView, zoom:f => zoomAt(CW/2, CH/2, f), view:() => ({...cam}),
-    setActive(on){ if(on === active) return; active = on; if(on){ restore(); size(); requestAnimationFrame(frame); } }, select(id){ sel = id; }, highlight(id){ hover = id; pointerOn = null; }, say:a => textOf({s:a})};
+    rotate, setView, fit:fitView, zoom:f => zoomAt(CW/2, CH/2, f), view:() => ({...cam}),
+    setActive(on){ if(on === active) return; active = on; if(on){ restore(); syncControls(); size(); requestAnimationFrame(frame); } }, select(id){ sel = id; }, highlight(id){ hover = id; pointerOn = null; }, say:a => textOf({s:a})};
 })();

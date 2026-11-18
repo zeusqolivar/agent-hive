@@ -24,7 +24,7 @@ unless you add an API key for a usage service, which it sends only to that servi
 | View | What it shows |
 |---|---|
 | **Agents** | Every live session, grouped into *Needs you*, *Working* and *Idle*, with a plain-language headline. Open a session to see its plan, your last request, its latest report, a timeline, subagents, pull requests and running commands. |
-| **Classroom** | The same sessions as robots in an isometric classroom, placed by what they're really doing. Rotate it, zoom and pan; click a robot for its details. An editor lets you arrange desks, furniture and decorations on a tile grid, and saves as you go. |
+| **Classroom** | The same sessions as robots in a classroom, placed by what they're really doing. A straight, front-facing room by default, or an angled one you can turn; zoom and pan either. Click a robot for its details. An editor lets you arrange desks, furniture and decorations on a tile grid, and saves as you go. |
 | **Terminal** | A read-only, live feed of a session: commands and their output, file edits, tool calls, messages, and thinking where Claude Code saved its text. |
 | **Activity** | What all your agents have said recently, newest first. |
 | **Usage** | **Limits and spending**: your Claude plan's 5-hour and weekly windows (with the opt-in status line below), Codex's plan windows, and the balance and spending of the API keys you add. Then tokens written per day, project, model and session, for the last 7 days. |

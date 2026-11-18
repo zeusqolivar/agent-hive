@@ -136,7 +136,8 @@
         $("edSelName").textContent = label(sel);
         $("edRemove").disabled = sel.kind === "door";
         // Arrow keys move in room directions, not screen ones, so the hint says which way is up.
-        const arrows = CAT[sel.kind].zone === "wall" ? "Arrow keys move it along the back wall; up and down move it higher or lower." : "Arrow keys follow the room, not the screen: up moves it toward the back wall, however the room is turned.";
+        const angled = Room.view?.().view === "angled";
+        const arrows = CAT[sel.kind].zone === "wall" ? "Arrow keys move it along the back wall; up and down move it higher or lower." : angled ? "Arrow keys follow the room, not the screen: up moves it toward the back wall, however the room is turned." : "Arrow keys move it.";
         $("edSelHint").textContent = sel.kind === "door" ? arrows + " The room needs its door, so it can't be removed." : arrows + " Delete removes it.";
       } else box.hidden = true;
       changed();
