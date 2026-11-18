@@ -3,7 +3,10 @@
 # Menu shortcut. A development shortcut until phase 5's NSIS installer, which replaces this.
 #
 #   scripts/install-windows.sh            the debug build (fastest to make)
-#   scripts/install-windows.sh release    the release build
+#   scripts/install-windows.sh release    the release build — use this for an install you actually click
+#
+# The debug shell is built with a console attached, so a terminal window appears beside the app when it starts.
+# The release build is subsystem 2 instead: no console, and the icons and pages load without the debug wait.
 #
 # The shell, the helper, its icon and the pages go together: hive-core serves `web` from beside itself, so a
 # copied exe without that folder shows an empty window.
