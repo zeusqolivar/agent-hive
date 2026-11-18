@@ -189,3 +189,15 @@ import Testing
         #expect(value.hasSuffix("existing") || value.hasSuffix("existing;") || value.hasSuffix(":existing"))
     }
 }
+
+@Suite struct ClockTests {
+    /// The refresh loops pace themselves with `Task.sleep`. If that returned immediately the helper would spin
+    /// at a full core, which is exactly what happened on Windows before this test existed.
+    @Test func taskSleepActuallyWaits() async throws {
+        let start = Date()
+        try await Task.sleep(for: .milliseconds(300))
+        let waited = Date().timeIntervalSince(start)
+        #expect(waited >= 0.2, "Task.sleep(for:) waited only \(waited)s")
+        #expect(waited < 3, "Task.sleep(for:) waited \(waited)s for 300 ms")
+    }
+}
