@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationNetworking)
+// On Windows, URLSession and friends live in a separate module.
+import FoundationNetworking
+#endif
 
 #if os(Windows)
 import WinSDK
@@ -57,8 +61,17 @@ public struct HelperActions: ActionHandler {
 
     public func openAntigravity(sessionId: String, cwd: String?) async -> (ok: Bool, message: String) {
         #if os(Windows)
-        // Phase 4 adds the Windows launcher: Antigravity.exe, then bringing its window forward.
-        return (false, "Not available on Windows yet.")
+        // The session's chat is a page inside Antigravity's own window, at `/c/<id>` on the app's local hub.
+        // Switching the app to that page needs the Chrome DevTools endpoint the Mac opener uses, and Antigravity
+        // only opens one when it was started with a debugging port. So: switch to the page when that endpoint is
+        // there, and otherwise bring the window forward, where the chat already is on the last conversation.
+        var switched = false
+        if let port = antigravityDevToolsPort() {
+            switched = await activateAntigravityPage(root: "http://127.0.0.1:\(port)")
+        }
+        let focused = focusOrLaunchAntigravityApp()
+        if switched { return (true, "Opened Antigravity.") }
+        return (focused, focused ? "Brought Antigravity forward." : "Couldn't find the Antigravity window.")
         #else
         return await AntigravityOpener(paths: .current).open(sessionId: sessionId, cwd: cwd)
         #endif
@@ -115,6 +128,55 @@ public struct HelperActions: ActionHandler {
         }
         diagnose("starting the Claude desktop app")
         return shellOpen(verb: nil, file: app, parameters: nil)
+    }
+
+    /// The port Antigravity writes when it runs with `--remote-debugging-port=0`, if it is running that way.
+    func antigravityDevToolsPort() -> Int? {
+        for file in HivePaths.current.antigravityDevToolsPorts {
+            guard let text = try? String(contentsOf: file, encoding: .utf8) else { continue }
+            let first = text.split(separator: "\n", omittingEmptySubsequences: false).first.map(String.init) ?? ""
+            if let port = Int(Text.strip(first)) { return port }
+        }
+        return nil
+    }
+
+    /// Asks the DevTools endpoint to make its page the active one: `/json/list` to learn the id, then
+    /// `/json/activate/<id>`. Both with the same two-second limit the Mac uses, and both optional: a failure
+    /// here only means the window comes forward instead.
+    func activateAntigravityPage(root: String) async -> Bool {
+        guard let list = URL(string: root + "/json/list") else { return false }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 2
+        configuration.connectionProxyDictionary = [:]
+        let session = URLSession(configuration: configuration)
+        guard let data = try? await session.data(for: URLRequest(url: list)).0,
+              let targets = try? JSON.parse(data),
+              let pages = targets.array else { return false }
+        guard let page = pages.first(where: { entry in
+            entry["type"]?.string == "page" && (entry["url"]?.string ?? "").contains("127.0.0.1")
+        }) else { return false }
+        let identifier = Py.str(page["id"] ?? .null)
+        guard let activate = URL(string: root + "/json/activate/" + identifier) else { return false }
+        return (try? await session.data(for: URLRequest(url: activate)).0) != nil
+    }
+
+    /// The Antigravity window: brought forward if it is running, started from its own folder if it isn't.
+    func focusOrLaunchAntigravityApp() -> Bool {
+        let table = (try? ProcessSources.system().snapshot()) ?? [:]
+        let pids = table.values.filter { AgentProcesses.isAntigravityApp($0.cmd) }.map(\.pid).sorted()
+        for pid in pids {
+            guard let window = Self.mainWindow(of: DWORD(pid)) else { continue }
+            let brought = Self.bringForward(window)
+            diagnose(brought ? "brought the Antigravity app forward" : "Antigravity is up but Windows kept the focus")
+            return true
+        }
+        let executable = HivePaths.current.antigravityApp.appending(path: "Antigravity.exe").path
+        guard FileManager.default.fileExists(atPath: executable) else {
+            diagnose("the Antigravity app is neither running nor installed")
+            return false
+        }
+        diagnose("starting the Antigravity app")
+        return shellOpen(verb: nil, file: executable, parameters: nil)
     }
 
     /// The window a process owns that a person would call its window: visible, and big enough not to be a
