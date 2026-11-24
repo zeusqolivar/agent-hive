@@ -95,7 +95,7 @@ struct MenuBarPanel: View {
             header
             Divider()
             // No scroll view: inside the menu bar window one collapses to zero height. The lists are capped
-            // instead (five sessions waiting, three working), so the panel stays a sensible height.
+            // instead (five sessions waiting, five working), so the panel stays a sensible height.
             content
             Divider()
             keepAwake
@@ -309,7 +309,10 @@ private struct SessionRow: View {
                     .foregroundStyle(needsYou ? Color.orange : Color.green)
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(session.name).font(.callout.weight(.medium)).lineLimit(1)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(session.name).font(.callout.weight(.medium)).lineLimit(1)
+                        AgentTag(agent: session.agent)
+                    }
                     Text(session.headline)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -326,7 +329,7 @@ private struct SessionRow: View {
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .padding(.horizontal, -6)
-        .accessibilityLabel("\(session.name), \(session.headline)")
+        .accessibilityLabel("\(session.name), \(session.agent), \(session.headline)")
         .accessibilityHint("Opens this session in Agent Hive")
     }
 }
@@ -399,8 +402,8 @@ private struct UsageRow: View {
     }
 }
 
-/// One plan window: its name and reset time, a bar that turns orange from 75% and red from 90%, and the
-/// percentage used.
+/// One plan window: its name and the percentage used, a bar that turns orange from 75% and red from 90%, and
+/// when it resets. Stacked rather than in columns, so nothing is cut off in the narrow panel.
 private struct MeterRow: View {
     let meter: UsageGlance.Meter
 
@@ -409,14 +412,15 @@ private struct MeterRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline) {
                 Text(meter.label).font(.callout)
-                if let resets = meter.resetsAt, resets > Date() {
-                    Text("Resets \(Self.when(resets))").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
+                Spacer(minLength: 8)
+                Text("\(Int(meter.used.rounded()))% used")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
-            .frame(width: 104, alignment: .leading)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.primary.opacity(0.12))
@@ -424,11 +428,9 @@ private struct MeterRow: View {
                 }
             }
             .frame(height: 5)
-            Text("\(Int(meter.used.rounded()))% used")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .frame(width: 60, alignment: .trailing)
+            if let resets = meter.resetsAt, resets > Date() {
+                Text("Resets \(Self.when(resets))").font(.caption).foregroundStyle(.secondary)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(meter.label), \(Int(meter.used.rounded())) percent used")
@@ -444,5 +446,29 @@ private struct MeterRow: View {
             return "tomorrow \(time)"
         }
         return "\(date.formatted(.dateTime.weekday(.wide))) \(time)"
+    }
+}
+
+/// Which agent a session belongs to, as a small capsule beside its name.
+private struct AgentTag: View {
+    let agent: String
+
+    private var tint: Color {
+        switch agent {
+        case "Antigravity": .blue
+        case "Codex": .teal
+        default: .orange
+        }
+    }
+
+    var body: some View {
+        Text(agent)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(tint.opacity(0.15), in: Capsule())
+            .fixedSize()
+            .accessibilityHidden(true)
     }
 }

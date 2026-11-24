@@ -4,7 +4,7 @@
 
 A Mac app that shows every AI coding agent session on your Mac in one place: which ones need you, what each
 one is doing right now, their subagents, and what they've been saying. It works with Claude Code, and also
-shows Google Antigravity conversations and OpenClaw automations when you have them.
+shows Codex threads, Google Antigravity conversations and OpenClaw automations when you have them.
 
 ![The Classroom view, with sample sessions](docs/screenshot.png)
 
@@ -111,6 +111,7 @@ open "build/Agent Hive.app"
 | Commands, memory, CPU | `ps` |
 | Background command output | `/private/tmp/claude-<uid>/*/<session>/tasks/*.output` |
 | Google Antigravity | `~/.gemini/antigravity/conversation_summaries.db` (read-only), its transcripts and `daemon/hub_*.json` |
+| Codex sessions | The end of each `~/.codex/sessions/**/rollout-*.jsonl` changed in the last 48 hours (plus its first line, for the folder and branch), and thread names from `~/.codex/session_index.jsonl`. `~/.codex/auth.json` and Codex's databases are never opened. Codex threads can't be replied to from Agent Hive. |
 | Tokens | Transcripts changed in the last 8 days |
 | Skills | `~/.claude/plugins`, `~/.claude/skills`, `~/.agents/skills`, `~/.cursor/skills`, OpenClaw's and Antigravity's skill folders |
 | OpenClaw | `~/.openclaw/state/openclaw.sqlite` (read-only) |
@@ -153,10 +154,10 @@ from the Claude app's. Details: [docs/spikes/S1-reply.md](docs/spikes/S1-reply.m
 
 | Path | What |
 |---|---|
-| `Sources/HiveCore` | Reads sessions, transcripts, subagents, processes, usage, skills, connectors, plan limits, Antigravity and OpenClaw, and builds the JSON the pages read. `Limits/` holds the Keychain key store, the usage-service providers and the status line installer |
+| `Sources/HiveCore` | Reads sessions, transcripts, subagents, processes, usage, skills, connectors, plan limits, Antigravity, Codex and OpenClaw, and builds the JSON the pages read. `Limits/` holds the Keychain key store, the usage-service providers and the status line installer |
 | `Sources/HiveApp` | The window, menu bar icon, settings, the `hive://` scheme handler, and native actions |
 | `Sources/HiveApp/Resources/web` | The pages (plain HTML, CSS and JavaScript), maintained here |
-| `Tests/HiveCoreTests` | Unit and contract tests. `Fixtures/home` is a made-up home folder, and `Fixtures/expected` holds the expected JSON for it; `Fixtures/connectors-home` and `Fixtures/limits` hold made-up connector configs, provider responses and Codex logs. No test reaches the network or your real settings |
+| `Tests/HiveCoreTests` | Unit and contract tests. `Fixtures/home` is a made-up home folder, and `Fixtures/expected` holds the expected JSON for it; `Fixtures/connectors-home` and `Fixtures/limits` hold made-up connector configs, provider responses and Codex logs; `Fixtures/codex-home` holds made-up Codex sessions. No test reaches the network or your real settings |
 | `scripts/make_icon.swift` | Draws the app icon and writes `Sources/HiveApp/Resources/AppIcon.icns` and `docs/icon.png` (run from the repository root) |
 | `docs/spikes` | Investigations into replying to sessions and reading plan usage |
 

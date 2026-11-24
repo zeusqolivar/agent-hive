@@ -34,10 +34,11 @@ public final class TranscriptReader: @unchecked Sendable {
             return hit.tail
         }
         lock.unlock()
-        let antigravity = paths.isAntigravity(url)
+        let antigravity = paths.isAntigravity(url), codex = paths.isCodex(url)
         guard let lines = try? TailFile.lines(url, size: size, want: Self.tailBytes) else { return nil }
-        var tail = antigravity ? AntigravityTranscript.scan(lines, naming: naming) : scan(lines)
-        if !antigravity, tail.events.count < 20, size > Self.tailBytes,
+        var tail = antigravity ? AntigravityTranscript.scan(lines, naming: naming)
+            : codex ? CodexTranscript.scan(lines, naming: naming) : scan(lines)
+        if !antigravity, !codex, tail.events.count < 20, size > Self.tailBytes,
            let wider = try? scan(TailFile.lines(url, size: size, want: Self.retryBytes)) {
             tail = wider
         }

@@ -66,7 +66,7 @@ public final class ReplySender: ReplyPolicy, ReplyHandler, @unchecked Sendable {
     }
 
     public func canReply(_ row: BoardRow, processes: [Int32: ProcRecord]) -> (allowed: Bool, note: String?) {
-        if row.provider != nil { return (false, nil) }    // Antigravity conversations aren't Claude sessions
+        if row.provider != nil { return (false, nil) }    // Antigravity and Codex threads aren't Claude sessions
         if row.live { return (false, Self.liveNote) }
         if processes.values.contains(where: { Self.resumes($0.cmd, row.id) }) { return (false, Self.busyNote) }
         if lock.withLock({ inFlight.contains(row.id) }) { return (false, Self.sendingNote) }

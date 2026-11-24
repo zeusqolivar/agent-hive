@@ -73,7 +73,8 @@ public final class LiveFeed: @unchecked Sendable {
         }
         lock.unlock()
         guard let lines = try? TailFile.lines(transcript, size: size, want: Self.bytes) else { return [] }
-        var items = paths.isAntigravity(transcript) ? AntigravityTranscript.live(lines, naming: naming) : parse(lines)
+        var items = paths.isAntigravity(transcript) ? AntigravityTranscript.live(lines, naming: naming)
+            : paths.isCodex(transcript) ? CodexTranscript.live(lines, naming: naming) : parse(lines)
         if let sub { for n in items.indices { items[n].sub = sub } }
         items = Array(items.suffix(Self.maxItems))
         lock.lock()

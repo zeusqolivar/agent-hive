@@ -94,7 +94,8 @@ public struct UsageGlance: Sendable, Equatable, Identifiable {
                     row.body = .amount(LimitsService.format(today, currency),
                                        caption: "Spent today · \(LimitsService.format(week, currency)) this week")
                 } else {
-                    row.body = .note(card["message"]?.string ?? "No numbers yet")
+                    // A stale card with nothing left to show (its windows have reset since it reported).
+                    row.body = .note(row.stale ? "No recent numbers" : (card["message"]?.string ?? "No numbers yet"))
                 }
             }
             rows.append(row)

@@ -18,6 +18,9 @@ import Testing
 
     @Test func otherRoots() {
         #expect(paths.codexSessions.path == "/tmp/h/.codex/sessions")
+        #expect(paths.codexIndex.path == "/tmp/h/.codex/session_index.jsonl")
+        #expect(paths.isCodex(URL(filePath: "/tmp/h/.codex/sessions/2026/11/24/rollout-x.jsonl")))
+        #expect(!paths.isCodex(URL(filePath: "/tmp/h/.codex/sessions-old/rollout-x.jsonl")))
         #expect(paths.openclawDB.path == "/tmp/h/.openclaw/state/openclaw.sqlite")
     }
 

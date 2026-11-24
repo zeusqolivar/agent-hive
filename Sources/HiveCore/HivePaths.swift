@@ -12,6 +12,8 @@ public struct HivePaths: Sendable {
     public var plugins: URL
     public var settings: URL
     public var codexSessions: URL
+    /// Codex's thread names: one `{id, thread_name, updated_at}` line per rename.
+    public var codexIndex: URL
     public var openclawDB: URL
     /// Where Claude Code writes background task output: `/private/tmp/claude-<uid>`.
     public var tasksRoot: URL
@@ -50,6 +52,7 @@ public struct HivePaths: Sendable {
         plugins = claude.appending(path: "plugins", directoryHint: .isDirectory)
         settings = claude.appending(path: "settings.json", directoryHint: .notDirectory)
         codexSessions = home.appending(path: ".codex/sessions", directoryHint: .isDirectory)
+        codexIndex = home.appending(path: ".codex/session_index.jsonl", directoryHint: .notDirectory)
         openclawDB = home.appending(path: ".openclaw/state/openclaw.sqlite", directoryHint: .notDirectory)
         tasksRoot = URL(filePath: "/private/tmp/claude-\(uid)", directoryHint: .isDirectory)
         openclawPackage = URL(filePath: "/opt/homebrew/lib/node_modules/openclaw", directoryHint: .isDirectory)
@@ -97,6 +100,11 @@ public struct HivePaths: Sendable {
     /// Whether a transcript is Antigravity's rather than Claude Code's (server.py's `is_antigravity`).
     public func isAntigravity(_ url: URL) -> Bool {
         url.path.hasPrefix(antigravity.path.hasSuffix("/") ? antigravity.path : antigravity.path + "/")
+    }
+
+    /// Whether a transcript is a Codex rollout under `~/.codex/sessions`.
+    public func isCodex(_ url: URL) -> Bool {
+        url.path.hasPrefix(codexSessions.path.hasSuffix("/") ? codexSessions.path : codexSessions.path + "/")
     }
 
     /// The signed-in user's real folders.

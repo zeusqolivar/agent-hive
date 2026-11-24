@@ -570,6 +570,7 @@ function rowHtml(s){
   const where = [s.project, s.branch ? "on " + s.branch : "", s.worktree ? "(worktree)" : ""].filter(Boolean).join(" ");
   const tags = [];
   if(s.provider === "google") tags.push(`<span class="tag">Google</span>`);
+  if(s.provider === "openai") tags.push(`<span class="tag">Codex</span>`);
   if(s.subagents.running) tags.push(`<span class="tag">${s.subagents.running} subagent${s.subagents.running>1?"s":""}</span>`);
   if(s.plan) tags.push(`<span class="tag">Step ${Math.min(s.plan.done+1, s.plan.total)} of ${s.plan.total}</span>`);
   if(s.quiet) tags.push(`<span class="tag warn">Quiet ${short(Date.now()/1000 - s.lastTs)}</span>`);
@@ -631,12 +632,12 @@ function renderDetail(){
     acts.push(`<button class="btn main" data-act="open">Open in Antigravity</button>`);
     if(d.webUrl) acts.push(`<a class="btn" href="${esc(d.webUrl)}" target="_blank" rel="noopener noreferrer">Open in browser</a>`);
   }
-  else if(d.live && d.hostId) acts.push(`<button class="btn main" data-act="open">Open in Claude</button>`);
+  else if(d.live && d.hostId && !d.provider) acts.push(`<button class="btn main" data-act="open">Open in Claude</button>`);
   if(d.live) acts.push(`<a class="btn" href="#/terminal/${esc(d.id)}">Watch terminal</a>`);
   // Only an app that can send replies (capabilities.reply) offers a reply box; otherwise nothing new shows.
   const canReply = ui.board?.capabilities?.reply && d.canReply;
   // A running Claude session can't take a reply from outside, so offer to copy the answer and open it there.
-  const canCopyAnswer = !canReply && d.live && d.hostId && d.provider !== "google";
+  const canCopyAnswer = !canReply && d.live && d.hostId && !d.provider;
   if(d.cwd) acts.push(`<button class="btn" data-act="reveal">Show folder</button>`);
   if(!d.hostId && d.resumeCommand) acts.push(`<button class="btn ${d.live ? "" : "main"}" data-copy="${esc(d.resumeCommand)}">Copy resume command</button>`);
   for(const p of d.prs.slice(-3).reverse()) acts.push(`<a class="btn" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">PR #${esc(p.number)}</a>`);
@@ -671,6 +672,7 @@ function renderDetail(){
   fact("Transcript", d.transcriptMB + " MB");
   fact("Process", d.pid);
   if(d.provider === "google") fact("Platform", "Google Antigravity");
+  else if(d.provider === "openai") fact("Platform", "Codex");
   else if(d.entry) fact("Platform", d.entry);
   fact("Version", d.version);
 
@@ -746,6 +748,7 @@ function evHtml(e, scope){
   if(e.k === "say" && !e.err && (ui.detail?.provider === "google" || ui.detail?.entry === "antigravity")){
     kind = "Google";
   }
+  else if(e.k === "say" && !e.err && ui.detail?.provider === "openai") kind = "Codex";
   const title = hasMore
     ? `<button class="t" data-toggle="${esc(id)}" aria-expanded="${open}">${esc(e.title)}</button>`
     : `<div class="t">${esc(e.title)}</div>`;
@@ -845,6 +848,7 @@ function renderActivity(items){
     if(e.k === "say" && !e.err){
       const s = ui.board?.sessions?.find(s => s.id === e.sid);
       if(s && (s.provider === "google" || s.entry === "antigravity")) kLabel = "Google";
+      else if(s?.provider === "openai") kLabel = "Codex";
     }
     return `<li class="ev ${esc(e.k)} ${e.err ? "err" : ""}">
       <time title="${esc(stamp(e.t))}">${esc(clock(e.t))}</time><span class="k">${esc(kLabel)}</span>
@@ -1273,7 +1277,7 @@ addEventListener("keydown", e => {
   if(e.key === "/"){ e.preventDefault(); if(ui.view !== "agents") location.hash = "#/agents"; $("#q").focus(); return; }
   if(/^[1-8]$/.test(e.key)){ location.hash = "#/" + VIEWS[+e.key-1]; return; }
   if(ui.view !== "agents") return;
-  if(e.key === "o"){ const s = ui.detail; if(s?.live && (s.hostId || s.provider === "google" || s.entry === "antigravity")) act("open"); return; }
+  if(e.key === "o"){ const s = ui.detail; if(s?.live && ((s.hostId && s.provider !== "openai") || s.provider === "google" || s.entry === "antigravity")) act("open"); return; }
   if(e.key === "f"){ act("reveal"); return; }
   if(["j","k","ArrowDown","ArrowUp"].includes(e.key)){
     e.preventDefault();

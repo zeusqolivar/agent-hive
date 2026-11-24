@@ -64,6 +64,8 @@ public struct TranscriptTail: Codable, Sendable, JSONRepresentable {
     public var turnEnded = false
     public var size: Int = 0
     public var mtime: Int = 0
+    /// Codex rollouts only: where the latest turn stands. Not part of `json`.
+    public var codex: CodexTurn?
 
     public init() {}
 

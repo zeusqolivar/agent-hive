@@ -36,11 +36,12 @@ enum PanelSnapshot {
         model.working = 3
         model.waiting = [
             .init(id: "a", name: "Checkout redesign", headline: "Asks whether to keep the old payment sheet or ship the new one"),
-            .init(id: "b", name: "API docs", headline: "Waiting for permission to run the docs build"),
+            .init(id: "b", name: "API docs", headline: "Waiting for permission to run the docs build", agent: "Codex"),
         ]
         model.busy = [
             .init(id: "c", name: "Search tests", headline: "Running the test suite"),
-            .init(id: "d", name: "Onboarding copy", headline: "Editing WelcomeView.swift"),
+            .init(id: "d", name: "Onboarding copy", headline: "Editing WelcomeView.swift", agent: "Antigravity"),
+            .init(id: "e", name: "Release notes", headline: "Reading the changelog", agent: "Codex"),
         ]
         let now = Date()
         model.usage = [
@@ -73,8 +74,8 @@ enum PanelSnapshot {
         let needs = rows.filter { $0.group == "needs" }, working = rows.filter { $0.group == "working" }
         model.needsYou = needs.count
         model.working = working.count
-        model.waiting = needs.prefix(5).map { .init(id: $0.id, name: $0.name, headline: $0.headline) }
-        model.busy = working.prefix(3).map { .init(id: $0.id, name: $0.name, headline: $0.headline) }
+        model.waiting = needs.prefix(5).map(AppModel.Waiting.init)
+        model.busy = working.prefix(5).map(AppModel.Waiting.init)
         model.usage = UsageGlance.from(cards)
     }
 }

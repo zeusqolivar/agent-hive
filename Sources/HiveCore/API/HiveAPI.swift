@@ -193,6 +193,7 @@ public struct HiveAPI: Sendable {
             }
             return Self.reply(200, ["ok": true, "message": "Opened the folder in Finder."])
         case "open":
+            if row.provider == "openai" { return Self.error(409, "Codex threads open in Codex, not from here.") }
             if row.provider == "google" || row.entry == "antigravity" {
                 let r = await actions.openAntigravity(sessionId: sid, cwd: row.cwd)
                 return Self.reply(200, ["ok": .bool(r.ok), "message": .string(r.message), "url": JSON(row.webUrl)])

@@ -73,4 +73,13 @@ import Testing
         #expect(rows[2].stale)
         #expect(rows[3].problem && rows[3].body == .note("OpenRouter rejected this key."))
     }
+
+    @Test func staleCardWithNothingLeftSaysSoBriefly() {
+        let cards: JSON = ["cards": .array([
+            Self.card("claude", "Claude plan", "stale", message: "Last reported by a Claude Code session in a terminal."),
+        ])]
+        let rows = UsageGlance.from(cards)
+        #expect(rows[0].body == .note("No recent numbers"))
+        #expect(rows[0].stale)
+    }
 }

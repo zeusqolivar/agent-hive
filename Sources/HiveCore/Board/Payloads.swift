@@ -27,7 +27,7 @@ public struct BoardRow: Sendable, JSONRepresentable {
     public var plan: JSON
     public var hostId: String?
     public var entry: String?
-    /// `google` for Google Antigravity conversations; nil for Claude Code.
+    /// `google` for Google Antigravity conversations, `openai` for Codex threads; nil for Claude Code.
     public var provider: String?
     public var version: String?
     public var startedAt: Int?

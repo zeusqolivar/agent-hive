@@ -13,6 +13,7 @@ final class BoardBuilder: @unchecked Sendable {
     let locator: TranscriptLocator
     let ended: EndedSessions
     let antigravity: AntigravityReader
+    let codex: CodexReader
     let now: @Sendable () -> Date
 
     init(paths: HivePaths, processes: ProcessSource, now: @escaping @Sendable () -> Date,
@@ -26,6 +27,7 @@ final class BoardBuilder: @unchecked Sendable {
         locator = TranscriptLocator(paths: paths)
         ended = EndedSessions(paths: paths, transcripts: transcripts, subagents: subagents, locator: locator, now: now)
         antigravity = AntigravityReader(paths: paths, transcripts: transcripts, locator: locator, now: now, pidAlive: pidAlive)
+        codex = CodexReader(paths: paths, transcripts: transcripts, locator: locator, now: now)
         self.now = now
     }
 
@@ -41,6 +43,11 @@ final class BoardBuilder: @unchecked Sendable {
         }
         // Google Antigravity's conversations, unless a Claude session has the same id.
         for (row, raw) in antigravity.sessions(table) where raws[row.id] == nil {
+            rows.append(row)
+            raws[row.id] = raw
+        }
+        // Codex threads, likewise.
+        for (row, raw) in codex.sessions(table) where raws[row.id] == nil {
             rows.append(row)
             raws[row.id] = raw
         }

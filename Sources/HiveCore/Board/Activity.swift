@@ -34,7 +34,7 @@ struct BoardViews {
         o["transcriptMB"] = .double((Double(tail?.size ?? 0) / 1e6 * 10).rounded(.toNearestOrEven) / 10)
         o["shortCwd"] = JSON(builder.naming.shortPath(row.cwd))
         o["resumeCommand"] = row.cwd.flatMap { cwd -> String? in
-            if cwd.isEmpty { return nil }
+            if cwd.isEmpty || row.provider == "openai" { return nil }    // Codex threads continue in Codex
             if row.provider == "google" { return "open -a Antigravity \(Shell.quote(cwd))" }
             return "cd \(Shell.quote(cwd)) && claude --resume \(id)"
         }.map(JSON.string) ?? .null

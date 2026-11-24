@@ -11,6 +11,27 @@ final class AppModel {
         var id: String
         var name: String
         var headline: String
+        /// Which agent runs it: "Claude", "Antigravity" or "Codex".
+        var agent: String = "Claude"
+
+        init(id: String, name: String, headline: String, agent: String = "Claude") {
+            self.id = id
+            self.name = name
+            self.headline = headline
+            self.agent = agent
+        }
+
+        init(_ row: BoardRow) {
+            self.init(id: row.id, name: row.name, headline: row.headline, agent: Self.agent(row.provider))
+        }
+
+        static func agent(_ provider: String?) -> String {
+            switch provider {
+            case "google": "Antigravity"
+            case "openai": "Codex"
+            default: "Claude"
+            }
+        }
     }
 
     var needsYou = 0
@@ -201,9 +222,8 @@ final class AppModel {
                 let needs = state.rows.filter { $0.group == "needs" }
                 self?.needsYou = needs.count
                 self?.working = state.rows.filter { $0.group == "working" }.count
-                self?.waiting = needs.prefix(5).map { Waiting(id: $0.id, name: $0.name, headline: $0.headline) }
-                self?.busy = state.rows.filter { $0.group == "working" }.prefix(3)
-                    .map { Waiting(id: $0.id, name: $0.name, headline: $0.headline) }
+                self?.waiting = needs.prefix(5).map(Waiting.init)
+                self?.busy = state.rows.filter { $0.group == "working" }.prefix(5).map(Waiting.init)
                 self?.applyKeepAwake()
                 try? await Task.sleep(for: .seconds(2))
             }
