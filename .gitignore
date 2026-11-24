@@ -19,3 +19,8 @@ windows/node_modules/
 windows/src-tauri/gen/
 windows/src-tauri/binaries/*.exe
 !windows/src-tauri/binaries/.gitkeep
+board.out
+action.out
+req.txt
+req2.txt
+err.txt
