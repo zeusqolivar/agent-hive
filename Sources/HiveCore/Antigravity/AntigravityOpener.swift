@@ -40,9 +40,20 @@ public struct AntigravityOpener: Sendable {
         self.processes = processes
     }
 
-    static let open = ("/usr/bin/open", ["-a", "Antigravity"])
+    /// The program that shows the Antigravity window: `open -a` on the Mac, the app itself on Windows, where a
+    /// second launch lands in the running instance and brings its window forward. Static so a test can say what
+    /// to expect on either system without building an opener.
+    public static func launchCommand(paths: HivePaths) -> (program: String, arguments: [String]) {
+        #if os(Windows)
+        return (paths.antigravityApp.appending(path: "Antigravity.exe").path, [])
+        #else
+        return ("/usr/bin/open", ["-a", "Antigravity"])
+        #endif
+    }
 
-    private func bringForward() { launcher.run(Self.open.0, Self.open.1) }
+    var launchCommand: (program: String, arguments: [String]) { Self.launchCommand(paths: paths) }
+
+    private func bringForward() { let command = launchCommand; launcher.run(command.program, command.arguments) }
 
     private func portFile() -> URL? {
         paths.antigravityDevToolsPorts.first {
@@ -66,7 +77,8 @@ public struct AntigravityOpener: Sendable {
         guard let file else {
             var isDir: ObjCBool = false
             if let cwd, !cwd.isEmpty, FileManager.default.fileExists(atPath: cwd, isDirectory: &isDir), isDir.boolValue {
-                launcher.run(Self.open.0, Self.open.1 + [cwd])
+                let command = launchCommand
+                launcher.run(command.program, command.arguments + [cwd])
             } else {
                 bringForward()
             }
@@ -103,7 +115,9 @@ public struct AntigravityOpener: Sendable {
                 try await devtools.navigate(webSocket: ws, to: "\(base)/c/\(sid)")
             }
             bringForward()
+            #if os(macOS)
             launcher.run("/usr/bin/osascript", ["-e", "tell application \"Antigravity\" to activate"])
+            #endif
             return (true, "Opened session in Antigravity.")
         } catch {
             bringForward()

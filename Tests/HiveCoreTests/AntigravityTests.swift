@@ -207,8 +207,21 @@ final class FakeDevTools: DevToolsClient, @unchecked Sendable {
 /// `open_antigravity_session`: brings Antigravity forward and, through its DevTools port, switches the window
 /// to the conversation. Only fakes here; nothing is sent to a real Antigravity.
 @Suite struct AntigravityOpenerTests {
-    static let open = ["/usr/bin/open", "-a", "Antigravity"]
-    static let activate = ["/usr/bin/osascript", "-e", "tell application \"Antigravity\" to activate"]
+    /// The command that shows the app, on either system: `/usr/bin/open -a Antigravity` on the Mac, the app
+    /// itself on Windows. Taken from the implementation so a change there fails here rather than passing silently.
+    static func open(_ paths: HivePaths) -> [String] {
+        let command = AntigravityOpener.launchCommand(paths: paths)
+        return [command.program] + command.arguments
+    }
+
+    /// The AppleScript activate the Mac adds after switching pages. Windows has nothing to add.
+    static var activateOnMac: [[String]] {
+        #if os(macOS)
+        return [["/usr/bin/osascript", "-e", "tell application \"Antigravity\" to activate"]]
+        #else
+        return []
+        #endif
+    }
 
     static func setUp(port: Bool = true, hub: Bool = true) throws -> (HivePaths, RecordingLauncher, FakeDevTools, AntigravityOpener) {
         let home = try Fixture.prepare()
@@ -233,20 +246,20 @@ final class FakeDevTools: DevToolsClient, @unchecked Sendable {
     }
 
     @Test func withoutADevToolsPortItLaunchesTheApp() async throws {
-        let (_, launcher, devtools, opener) = try Self.setUp(port: false)
+        let (paths, launcher, devtools, opener) = try Self.setUp(port: false)
         let r = await opener.open(sessionId: "agy-run-0001", cwd: "/nonexistent/folder")
         #expect(r.ok)
         #expect(r.message == "Launched Antigravity.")
-        #expect(launcher.runs == [Self.open, Self.open])
+        #expect(launcher.runs == [Self.open(paths), Self.open(paths)])
         #expect(devtools.gets.isEmpty)
-        let (_, launcher2, _, opener2) = try Self.setUp(port: false)
+        let (paths2, launcher2, _, opener2) = try Self.setUp(port: false)
         let folder = FileManager.default.temporaryDirectory.path
         _ = await opener2.open(sessionId: "agy-run-0001", cwd: folder)
-        #expect(launcher2.runs == [Self.open, Self.open + [folder]])
+        #expect(launcher2.runs == [Self.open(paths2), Self.open(paths2) + [folder]])
     }
 
     @Test func switchesThePageToTheConversation() async throws {
-        let (_, launcher, devtools, opener) = try Self.setUp()
+        let (paths, launcher, devtools, opener) = try Self.setUp()
         devtools.pages = [["id": "W", "type": "service_worker", "url": "http://127.0.0.1:50001/sw.js"],
                           Self.page("https://127.0.0.1:50002/c/other-0001?tab=1")]
         let r = await opener.open(sessionId: "agy-run-0001", cwd: nil)
@@ -255,16 +268,16 @@ final class FakeDevTools: DevToolsClient, @unchecked Sendable {
         #expect(devtools.gets == ["http://127.0.0.1:9333/json/list", "http://127.0.0.1:9333/json/activate/P1"])
         #expect(devtools.navigations.map(\.socket) == ["ws://127.0.0.1:9333/devtools/page/P1"])
         #expect(devtools.navigations.map(\.url) == ["https://127.0.0.1:50002/c/agy-run-0001"])
-        #expect(launcher.runs == [Self.open, Self.activate])
+        #expect(launcher.runs == [Self.open(paths)] + Self.activateOnMac)
     }
 
     @Test func aPageAlreadyOnTheConversationIsOnlyBroughtForward() async throws {
-        let (_, launcher, devtools, opener) = try Self.setUp()
+        let (paths, launcher, devtools, opener) = try Self.setUp()
         devtools.pages = [Self.page("https://127.0.0.1:50002/c/agy-run-0001")]
         let r = await opener.open(sessionId: "agy-run-0001", cwd: nil)
         #expect(r == (true, "Opened session in Antigravity."))
         #expect(devtools.navigations.isEmpty)
-        #expect(launcher.runs == [Self.open, Self.activate])
+        #expect(launcher.runs == [Self.open(paths)] + Self.activateOnMac)
     }
 
     @Test func aPageWithoutTheAppAddressUsesTheHub() async throws {
@@ -273,29 +286,29 @@ final class FakeDevTools: DevToolsClient, @unchecked Sendable {
         _ = await opener.open(sessionId: "agy-run-0001", cwd: nil)
         #expect(devtools.navigations.map(\.url) == ["https://127.0.0.1:50002/c/agy-run-0001"])
 
-        let (_, launcher2, devtools2, opener2) = try Self.setUp(hub: false)
+        let (paths2, launcher2, devtools2, opener2) = try Self.setUp(hub: false)
         devtools2.pages = [Self.page("chrome://workbench?host=127.0.0.1")]
         let r = await opener2.open(sessionId: "agy-run-0001", cwd: nil)
         #expect(r == (false, "Brought Antigravity forward, but couldn't find the session's address."))
         #expect(devtools2.navigations.isEmpty)
-        #expect(launcher2.runs == [Self.open])
+        #expect(launcher2.runs == [Self.open(paths2)])
     }
 
     @Test func noAppPageBringsItToFront() async throws {
-        let (_, launcher, devtools, opener) = try Self.setUp()
+        let (paths, launcher, devtools, opener) = try Self.setUp()
         devtools.pages = [["id": "X", "type": "page", "url": "about:blank"]]
         let r = await opener.open(sessionId: "agy-run-0001", cwd: nil)
         #expect(r == (true, "Brought Antigravity to front."))
-        #expect(launcher.runs == [Self.open])
+        #expect(launcher.runs == [Self.open(paths)])
     }
 
     @Test func aFailureStillBringsItForward() async throws {
-        let (_, launcher, devtools, opener) = try Self.setUp()
+        let (paths, launcher, devtools, opener) = try Self.setUp()
         devtools.failList = true
         let r = await opener.open(sessionId: "agy-run-0001", cwd: nil)
         #expect(!r.ok)
         #expect(r.message.hasPrefix("Brought Antigravity forward, but couldn't switch to the session: "))
-        #expect(launcher.runs == [Self.open])
+        #expect(launcher.runs == [Self.open(paths)])
     }
 }
 

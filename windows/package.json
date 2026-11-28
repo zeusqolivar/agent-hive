@@ -1,7 +1,7 @@
 {
   "name": "agent-hive-shell",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "The Windows shell for Agent Hive: the existing pages, in a WebView2 window, fed by hive-core.exe.",
   "scripts": {
     "tauri": "tauri",

@@ -3,10 +3,13 @@
 # Menu shortcut. A development shortcut until phase 5's NSIS installer, which replaces this.
 #
 #   scripts/install-windows.sh            the debug build (fastest to make)
-#   scripts/install-windows.sh release    the release build
+#   scripts/install-windows.sh release    the release build — use this for an install you actually click
 #
-# The shell, the helper and the pages go together: hive-core serves `web` from beside itself, so a copied exe
-# without that folder shows an empty window.
+# The debug shell is built with a console attached, so a terminal window appears beside the app when it starts.
+# The release build is subsystem 2 instead: no console, and the icons and pages load without the debug wait.
+#
+# The shell, the helper, its icon and the pages go together: hive-core serves `web` from beside itself, so a
+# copied exe without that folder shows an empty window.
 set -eu
 
 PROFILE="${1:-debug}"
@@ -18,9 +21,10 @@ esac
 SHELL_EXE="$TAURI/agent-hive-shell.exe"
 HELPER_EXE="$PRODUCTS/hive-core.exe"
 PAGES="$PWD/Sources/HiveApp/Resources/web"
+ICON="$PWD/windows/src-tauri/icons/icon.ico"
 TARGET="$LOCALAPPDATA/Programs/Agent Hive"
 
-for needed in "$SHELL_EXE" "$HELPER_EXE" "$PAGES"; do
+for needed in "$SHELL_EXE" "$HELPER_EXE" "$PAGES" "$ICON"; do
     [ -e "$needed" ] || { echo "Missing $needed — build it first:" >&2; \
         echo "  swift build --product hive-core $([ "$PROFILE" = release ] && echo '-c release')" >&2; \
         echo "  cd windows && cargo build $([ "$PROFILE" = release ] && echo '--release')" >&2; exit 1; }
@@ -29,19 +33,30 @@ done
 mkdir -p "$TARGET"
 cp -f "$SHELL_EXE" "$TARGET/Agent Hive.exe"
 cp -f "$HELPER_EXE" "$TARGET/hive-core.exe"
+cp -f "$ICON" "$TARGET/icon.ico"
 rm -rf "$TARGET/web"
 cp -R "$PAGES" "$TARGET/web"
 echo "Installed into $TARGET"
 
-# The Start Menu shortcut, so it launches like any other app.
+# Two shortcuts, both pointing at the installed copy so they survive a moved repository. The Start Menu folder is
+# what Windows Search indexes, which is how the app is found by typing its name.
 powershell -NoProfile -ExecutionPolicy Bypass -Command "
-  \$link = Join-Path \$env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Agent Hive.lnk'
+  \$target = '$TARGET/Agent Hive.exe'
+  \$icon = '$TARGET/icon.ico'
   \$shell = New-Object -ComObject WScript.Shell
-  \$shortcut = \$shell.CreateShortcut(\$link)
-  \$shortcut.TargetPath = '$TARGET/Agent Hive.exe'
-  \$shortcut.WorkingDirectory = '$TARGET'
-  \$shortcut.IconLocation = '$PWD/windows/src-tauri/icons/icon.ico'
-  \$shortcut.Description = 'Agent Hive: every AI coding agent session on this PC'
-  \$shortcut.Save()
-  Write-Output \"Start Menu: \$link\"
+  \$folders = @(
+    (Join-Path \$env:APPDATA 'Microsoft\Windows\Start Menu\Programs'),
+    ([Environment]::GetFolderPath('Desktop'))
+  )
+  foreach (\$folder in \$folders) {
+    if (-not (Test-Path \$folder)) { continue }
+    \$link = Join-Path \$folder 'Agent Hive.lnk'
+    \$shortcut = \$shell.CreateShortcut(\$link)
+    \$shortcut.TargetPath = \$target
+    \$shortcut.WorkingDirectory = '$TARGET'
+    \$shortcut.IconLocation = \$icon
+    \$shortcut.Description = 'Agent Hive: every AI coding agent session on this PC'
+    \$shortcut.Save()
+    Write-Output \"Shortcut: \$link\"
+  }
 "

@@ -198,6 +198,9 @@ import Testing
         try await Task.sleep(for: .milliseconds(300))
         let waited = Date().timeIntervalSince(start)
         #expect(waited >= 0.2, "Task.sleep(for:) waited only \(waited)s")
-        #expect(waited < 3, "Task.sleep(for:) waited \(waited)s for 300 ms")
+        // A generous ceiling on purpose: the only failure worth catching here is the sleep returning at once,
+        // which is what spinning looks like. On a busy machine (a game at 447% CPU during a parallel run) 300 ms
+        // can take seconds, and a tight bound would report that load as a defect.
+        #expect(waited < 10, "Task.sleep(for:) waited \(waited)s for 300 ms")
     }
 }
