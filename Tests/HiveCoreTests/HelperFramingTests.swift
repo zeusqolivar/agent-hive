@@ -84,7 +84,9 @@ import Testing
         // The same readers the app builds, with actions that answer for this platform.
         let services = HiveServices(actions: HelperActions(), pages: nil, start: false)
         #expect(services.paths.home.path == HivePaths.current.home.path)
-        // No claude:// handler on the PC that was measured, so the helper says no rather than guessing.
-        #expect(HelperActions().open(hostSessionId: "abc") == false)
+        // `open` is a real action on Windows now — it brings the Claude app forward when no claude:// handler
+        // exists — so what is worth pinning down is that an id which isn't shaped like one is refused before
+        // any command runs.
+        #expect(HelperActions().openInTerminal(sessionId: "not an id; rm -rf", cwd: nil) == false)
     }
 }
